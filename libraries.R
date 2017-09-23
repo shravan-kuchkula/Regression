@@ -7,7 +7,8 @@ installRequiredPackages <- function(pkg){
 }
 
 libs <- c("readr", "dplyr", "tidyr", "ggplot2",
-          "magrittr", "markdown", "knitr", "yaml")
+          "magrittr", "markdown", "knitr", "yaml",
+          "corrplot")
 
 installRequiredPackages(libs)
 

@@ -19,3 +19,9 @@ ff %>%
 # Create boxplots
 ggplot(ff, aes(x = as.factor(X), y=logArea)) +
   geom_boxplot()
+
+# Create correlation matrix
+numericFF <- ff %>%
+  select(-X, -Y, -month, -day, -area)
+
+M <- round(cor(numericFF), 2)

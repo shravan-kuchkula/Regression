@@ -97,8 +97,34 @@ forestfires %>%
   geom_boxplot()
 ```
 
+Create a correlation matrix of all the numeric variables:
 
+```{r message=FALSE, warning=FALSE}
+attach(forestfires)
+numericFF <- forestfires %>%
+  filter(area > 0) %>%
+  mutate(logArea = log(area)) %>%
+  select(-X, -Y, -month, -day, -area)
 
+# Create correlation matrix
+round(cor(numericFF), 2)
+```
+
+Visualize this in a corrplot
+
+```{r message=FALSE, warning=FALSE}
+attach(forestfires)
+numericFF <- forestfires %>%
+  filter(area > 0) %>%
+  mutate(logArea = log(area)) %>%
+  select(-X, -Y, -month, -day, -area)
+
+# Create correlation matrix
+M <- round(cor(numericFF), 2)
+corrplot(M, method="pie", type="lower")
+```
+
+There appear to be some correlation between predictor variables. Very little correlation with the response variable.
 
 
   

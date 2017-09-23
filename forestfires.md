@@ -107,3 +107,45 @@ forestfires %>%
 ```
 
 ![](forestfires_files/figure-markdown_github/unnamed-chunk-8-1.png)
+
+Create a correlation matrix of all the numeric variables:
+
+``` r
+attach(forestfires)
+numericFF <- forestfires %>%
+  filter(area > 0) %>%
+  mutate(logArea = log(area)) %>%
+  select(-X, -Y, -month, -day, -area)
+
+# Create correlation matrix
+round(cor(numericFF), 2)
+```
+
+    ##          FFMC   DMC    DC   ISI  temp    RH  wind rain logArea
+    ## FFMC     1.00  0.48  0.41  0.70  0.56 -0.29 -0.16 0.08   -0.05
+    ## DMC      0.48  1.00  0.67  0.33  0.50  0.03 -0.14 0.08    0.03
+    ## DC       0.41  0.67  1.00  0.26  0.50 -0.08 -0.24 0.04   -0.03
+    ## ISI      0.70  0.33  0.26  1.00  0.47 -0.15  0.07 0.07   -0.11
+    ## temp     0.56  0.50  0.50  0.47  1.00 -0.50 -0.32 0.08   -0.03
+    ## RH      -0.29  0.03 -0.08 -0.15 -0.50  1.00  0.14 0.10   -0.05
+    ## wind    -0.16 -0.14 -0.24  0.07 -0.32  0.14  1.00 0.05    0.05
+    ## rain     0.08  0.08  0.04  0.07  0.08  0.10  0.05 1.00    0.01
+    ## logArea -0.05  0.03 -0.03 -0.11 -0.03 -0.05  0.05 0.01    1.00
+
+Visualize this in a corrplot
+
+``` r
+attach(forestfires)
+numericFF <- forestfires %>%
+  filter(area > 0) %>%
+  mutate(logArea = log(area)) %>%
+  select(-X, -Y, -month, -day, -area)
+
+# Create correlation matrix
+M <- round(cor(numericFF), 2)
+corrplot(M, method="pie", type="lower")
+```
+
+![](forestfires_files/figure-markdown_github/unnamed-chunk-10-1.png)
+
+There appear to be some correlation between predictor variables. Very little correlation with the response variable.
