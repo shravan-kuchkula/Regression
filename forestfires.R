@@ -25,3 +25,32 @@ numericFF <- ff %>%
   select(-X, -Y, -month, -day, -area)
 
 M <- round(cor(numericFF), 2)
+
+# Recode the month variable
+#forestfires$season <- rep("spring", 270)
+
+for (i in 1:270){
+  if(ff$month[i] %in% c("dec", "jan", "feb"))
+      ff$season[i] <- "winter"
+  else if (ff$month[i] %in% c("sep", "oct", "nov"))
+      ff$season[i] <- "fall"
+  else if (ff$month[i] %in% c("jun", "jul", "aug"))
+      ff$season[i] <- "summer"
+  else
+      ff$season[i] <- "spring"
+}
+
+# Create a histogram to check the distribution of values faceted by season.
+ggplot(ff, aes(x = logArea)) +
+  geom_histogram() + 
+  facet_grid(~as.factor(season))
+
+# Plot scatter plots
+ggplot(ff, aes(x = FFMC, y = logArea)) +
+  geom_point()
+
+# Extract only numeric variables
+nFF <- ff %>%
+  select(-X, -Y, -month, -day, -season, -area)
+
+pairs(nFF)
