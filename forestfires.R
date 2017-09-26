@@ -53,4 +53,20 @@ ggplot(ff, aes(x = FFMC, y = logArea)) +
 nFF <- ff %>%
   select(-X, -Y, -month, -day, -season, -area)
 
-pairs(nFF)
+
+# Regression 
+
+ggplot(forestfires, aes(x=FFMC, y=logArea)) +
+  geom_point() +
+  geom_abline(intercept = mean(logArea), slope = 0) +
+  geom_smooth(method="lm", se=FALSE)
+
+ggplot(forestfires, aes(x=FFMC, y=logArea)) +
+  geom_point() +
+  geom_abline(intercept = 3.54, slope = -0.019)
+
+  ggplot(forestfires, aes(x=FFMC, y=logArea)) +
+    geom_point() +
+    geom_smooth(method = "lm", se=FALSE)
+  
+#### APPROACH 2: log(area + 1) then remove zeros

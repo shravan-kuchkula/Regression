@@ -12,6 +12,14 @@ Shravan Kuchkula
     -   [Calculating high-leverage points:](#calculating-high-leverage-points)
     -   [Influence:](#influence)
 -   [Multiple Linear Regression](#multiple-linear-regression)
+    -   [Fitting a parallel slopes model](#fitting-a-parallel-slopes-model)
+    -   [Checking the predictors](#checking-the-predictors)
+    -   [Interactions](#interactions)
+    -   [Squared Terms](#squared-terms)
+-   [Model Selection](#model-selection)
+-   [Model Checking](#model-checking)
+-   [Interpretation of coefficients](#interpretation-of-coefficients)
+-   [Conclusion](#conclusion)
 
 Introduction
 ------------
@@ -566,3 +574,276 @@ mod %>%
 
 Multiple Linear Regression
 --------------------------
+
+### Fitting a parallel slopes model
+
+We use the lm() function to fit linear models to data. In this case, we want to understand how the burnt area by forest fire varies as a function of `FFMC` and `season`. From EDA, it appears that `summer` and `fall` seasons tend to have the most extreme forest fires.
+
+We will fit a parallel slopes model using lm(). In addition to the data argument, lm() needs to know which variables you want to include in your regression model, and how you want to include them. It accomplishes this using a formula argument. A simple linear regression formula looks like y ~ x, where y is the name of the response variable, and x is the name of the explanatory variable. Here, we will simply extend this formula to include multiple explanatory variables. A parallel slopes model has the form y ~ x + z, where z is a categorical explanatory variable, and x is a numerical explanatory variable.
+
+Let's start with building a basic lm object
+
+``` r
+mod_parallel <- lm(logArea ~ factor(season) + FFMC, data=ff)
+summary(mod_parallel)
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = logArea ~ factor(season) + FFMC, data = ff)
+    ## 
+    ## Residuals:
+    ##     Min      1Q  Median      3Q     Max 
+    ## -1.9980 -0.9216 -0.1970  0.6816  4.6917 
+    ## 
+    ## Coefficients:
+    ##                      Estimate Std. Error t value Pr(>|t|)  
+    ## (Intercept)           0.93577    2.34862   0.398   0.6906  
+    ## factor(season)spring  0.04623    0.28902   0.160   0.8731  
+    ## factor(season)summer -0.37190    0.17015  -2.186   0.0297 *
+    ## factor(season)winter  0.18858    0.36627   0.515   0.6071  
+    ## FFMC                  0.01479    0.02573   0.575   0.5659  
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 1.252 on 265 degrees of freedom
+    ## Multiple R-squared:  0.02265,    Adjusted R-squared:  0.007901 
+    ## F-statistic: 1.536 on 4 and 265 DF,  p-value: 0.1922
+
+Visualize this parallel slopes models: Let's first draw a scatter plot of these 3 variables.
+
+``` r
+ff %>%
+  ggplot(aes(y = logArea, x = FFMC, color = season)) +
+  geom_point()
+```
+
+![](forestfires1_files/figure-markdown_github/unnamed-chunk-39-1.png)
+
+Before we draw the parallel regression lines, we need to take a look at the lm object a bit more carefully. Let's use the augment method to check what is contained in the lm object.
+
+``` r
+mod_parallel %>%
+  augment() %>%
+  head()
+```
+
+    ##     logArea factor.season. FFMC  .fitted   .se.fit    .resid        .hat
+    ## 1 0.3074847         summer 85.8 1.832889 0.2035601 -1.525405 0.026417805
+    ## 2 0.3576744           fall 91.0 2.281702 0.1240754 -1.924028 0.009814831
+    ## 3 0.3852624           fall 90.9 2.280223 0.1241878 -1.894961 0.009832621
+    ## 4 0.4382549         summer 95.5 1.976357 0.1374147 -1.538102 0.012038652
+    ## 5 0.4762342         summer 90.1 1.896488 0.1267640 -1.420254 0.010244799
+    ## 6 0.5364934         summer 90.0 1.895009 0.1279885 -1.358516 0.010443677
+    ##     .sigma     .cooksd .std.resid
+    ## 1 1.251161 0.008269189  -1.234396
+    ## 2 1.249118 0.004725133  -1.543863
+    ## 3 1.249287 0.004591916  -1.520553
+    ## 4 1.251154 0.003720571  -1.235580
+    ## 5 1.251693 0.002689808  -1.139877
+    ## 6 1.251955 0.002509823  -1.090436
+
+The fitted values for each observation is stored in `.fitted`. The categorical variable is stored as `factor.season`.
+
+Parallel slopes models are so-named because we can visualize these models in the data space as not one line, but two parallel lines. To do this, we'll draw two things:
+
+1.  a scatterplot showing the data, with color separating the points into groups
+2.  a line for each value of the categorical variable
+
+Our plotting strategy is to compute the fitted values, plot these, and connect the points to form a line. The `augment()` function from the `broom` package provides an easy way to add the fitted values to our data frame, and the `geom_line()` function can then use that data frame to plot the points and connect them.
+
+``` r
+# scatterplot with color
+data_space <- ggplot(augment(mod_parallel), aes(y = logArea, x = FFMC, color = factor.season.)) +
+  geom_point()
+
+data_space + 
+  geom_line(aes(y = .fitted))
+```
+
+![](forestfires1_files/figure-markdown_github/unnamed-chunk-41-1.png)
+
+### Checking the predictors
+
+Let's build a model by including all the predictors except X and Y.
+
+``` r
+fullModel <- lm(formula = logArea ~ factor(season) + FFMC + DMC + DC + ISI + 
+    temp + RH + wind + rain + factor(day), data = ff)
+
+summary(fullModel)
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = logArea ~ factor(season) + FFMC + DMC + DC + ISI + 
+    ##     temp + RH + wind + rain + factor(day), data = ff)
+    ## 
+    ## Residuals:
+    ##     Min      1Q  Median      3Q     Max 
+    ## -2.1727 -0.8519 -0.1147  0.6123  4.3773 
+    ## 
+    ## Coefficients:
+    ##                        Estimate Std. Error t value Pr(>|t|)   
+    ## (Intercept)           1.8545376  3.3774829   0.549  0.58343   
+    ## factor(season)spring -0.5215205  0.6773934  -0.770  0.44208   
+    ## factor(season)summer -0.7431396  0.2568192  -2.894  0.00414 **
+    ## factor(season)winter -0.1376378  0.6737808  -0.204  0.83830   
+    ## FFMC                  0.0062437  0.0352803   0.177  0.85967   
+    ## DMC                   0.0051726  0.0021268   2.432  0.01571 * 
+    ## DC                   -0.0014742  0.0009742  -1.513  0.13148   
+    ## ISI                  -0.0187301  0.0297372  -0.630  0.52936   
+    ## temp                  0.0149925  0.0271242   0.553  0.58093   
+    ## RH                   -0.0056693  0.0078883  -0.719  0.47299   
+    ## wind                  0.0602372  0.0467880   1.287  0.19912   
+    ## rain                  0.0403758  0.1997045   0.202  0.83994   
+    ## factor(day)mon        0.0907444  0.2875435   0.316  0.75258   
+    ## factor(day)sat        0.5550105  0.2771514   2.003  0.04630 * 
+    ## factor(day)sun        0.3640869  0.2740078   1.329  0.18513   
+    ## factor(day)thu        0.1212900  0.3043223   0.399  0.69056   
+    ## factor(day)tue        0.3475007  0.2881291   1.206  0.22893   
+    ## factor(day)wed        0.0937092  0.3022082   0.310  0.75676   
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 1.241 on 252 degrees of freedom
+    ## Multiple R-squared:  0.08712,    Adjusted R-squared:  0.02554 
+    ## F-statistic: 1.415 on 17 and 252 DF,  p-value: 0.1294
+
+The overall F-test does not seem to be significant. This indicates that we might need to consider including some interactions and/or higher order terms in the model.
+
+### Interactions
+
+What constitutes interactions to be included ?
+
+### Squared Terms
+
+Wind and RH are good candidates for including a squared term. As the logArea seem to be increasing exponentially.
+
+``` r
+ff$RH2 <- (ff$RH)^2
+ff$wind2 <- (ff$wind)^2
+
+ggplot(ff, aes(y = logArea, x = RH2)) + geom_point() + geom_smooth(se=FALSE)
+```
+
+![](forestfires1_files/figure-markdown_github/unnamed-chunk-43-1.png)
+
+``` r
+ggplot(ff, aes(y = logArea, x = wind2)) + geom_point() + geom_smooth(se=FALSE)
+```
+
+![](forestfires1_files/figure-markdown_github/unnamed-chunk-43-2.png)
+
+Including RH2 and wind2 in the model
+
+``` r
+squaredModel <- lm(formula = logArea ~ factor(season) + FFMC + DMC + DC + ISI + 
+    temp + RH + wind + rain + factor(day) + RH2 + wind2, data = ff)
+
+summary(squaredModel)
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = logArea ~ factor(season) + FFMC + DMC + DC + ISI + 
+    ##     temp + RH + wind + rain + factor(day) + RH2 + wind2, data = ff)
+    ## 
+    ## Residuals:
+    ##     Min      1Q  Median      3Q     Max 
+    ## -2.1765 -0.8554 -0.0901  0.6047  4.2484 
+    ## 
+    ## Coefficients:
+    ##                        Estimate Std. Error t value Pr(>|t|)   
+    ## (Intercept)           2.0472088  3.4050675   0.601   0.5482   
+    ## factor(season)spring -0.4669600  0.6764853  -0.690   0.4907   
+    ## factor(season)summer -0.7005857  0.2562296  -2.734   0.0067 **
+    ## factor(season)winter -0.0266919  0.6729453  -0.040   0.9684   
+    ## FFMC                  0.0114922  0.0351283   0.327   0.7438   
+    ## DMC                   0.0048144  0.0021389   2.251   0.0253 * 
+    ## DC                   -0.0013736  0.0009737  -1.411   0.1596   
+    ## ISI                  -0.0251064  0.0297600  -0.844   0.3997   
+    ## temp                  0.0108714  0.0271652   0.400   0.6894   
+    ## RH                   -0.0499998  0.0281622  -1.775   0.0770 . 
+    ## wind                  0.3124880  0.1681480   1.858   0.0643 . 
+    ## rain                  0.0445693  0.1984309   0.225   0.8225   
+    ## factor(day)mon        0.0447164  0.2869339   0.156   0.8763   
+    ## factor(day)sat        0.5260001  0.2762087   1.904   0.0580 . 
+    ## factor(day)sun        0.3633246  0.2723593   1.334   0.1834   
+    ## factor(day)thu        0.0542585  0.3046902   0.178   0.8588   
+    ## factor(day)tue        0.3203289  0.2865243   1.118   0.2646   
+    ## factor(day)wed        0.0655633  0.3005703   0.218   0.8275   
+    ## RH2                   0.0004325  0.0002759   1.568   0.1182   
+    ## wind2                -0.0283199  0.0173557  -1.632   0.1040   
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 1.233 on 250 degrees of freedom
+    ## Multiple R-squared:  0.106,  Adjusted R-squared:  0.03801 
+    ## F-statistic: 1.559 on 19 and 250 DF,  p-value: 0.06696
+
+Including interaction terms:
+
+``` r
+squaredInteractionModel <- lm(formula = logArea ~ factor(season) + (FFMC + DMC + DC + ISI)^2 +  temp + RH + wind + rain + factor(day) + RH2 + wind2, data = ff)
+
+summary(squaredInteractionModel)
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = logArea ~ factor(season) + (FFMC + DMC + DC + ISI)^2 + 
+    ##     temp + RH + wind + rain + factor(day) + RH2 + wind2, data = ff)
+    ## 
+    ## Residuals:
+    ##     Min      1Q  Median      3Q     Max 
+    ## -2.2477 -0.7964 -0.1444  0.6056  3.9446 
+    ## 
+    ## Coefficients:
+    ##                        Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept)           1.025e+00  7.197e+00   0.142 0.886866    
+    ## factor(season)spring -4.472e-01  7.674e-01  -0.583 0.560586    
+    ## factor(season)summer -1.097e+00  2.839e-01  -3.865 0.000142 ***
+    ## factor(season)winter  2.038e-01  8.336e-01   0.244 0.807080    
+    ## FFMC                  1.028e-02  8.675e-02   0.118 0.905769    
+    ## DMC                  -1.548e-01  9.500e-02  -1.629 0.104549    
+    ## DC                    2.409e-02  1.641e-02   1.468 0.143395    
+    ## ISI                   3.287e-01  7.854e-01   0.418 0.675973    
+    ## temp                 -3.502e-03  2.822e-02  -0.124 0.901341    
+    ## RH                   -4.128e-02  2.869e-02  -1.439 0.151485    
+    ## wind                  3.783e-01  1.714e-01   2.208 0.028193 *  
+    ## rain                 -4.690e-03  1.975e-01  -0.024 0.981072    
+    ## factor(day)mon       -3.629e-02  2.874e-01  -0.126 0.899618    
+    ## factor(day)sat        5.146e-01  2.736e-01   1.881 0.061183 .  
+    ## factor(day)sun        3.282e-01  2.692e-01   1.219 0.223888    
+    ## factor(day)thu        3.769e-02  3.065e-01   0.123 0.902228    
+    ## factor(day)tue        2.730e-01  2.901e-01   0.941 0.347563    
+    ## factor(day)wed        6.051e-02  3.006e-01   0.201 0.840603    
+    ## RH2                   3.681e-04  2.807e-04   1.312 0.190886    
+    ## wind2                -3.710e-02  1.812e-02  -2.047 0.041684 *  
+    ## FFMC:DMC              1.934e-03  1.061e-03   1.824 0.069429 .  
+    ## FFMC:DC              -2.654e-04  1.970e-04  -1.347 0.179257    
+    ## FFMC:ISI             -3.099e-03  8.361e-03  -0.371 0.711204    
+    ## DMC:DC               -1.940e-05  1.161e-05  -1.671 0.095905 .  
+    ## DMC:ISI              -7.287e-05  6.953e-04  -0.105 0.916617    
+    ## DC:ISI               -1.047e-04  2.054e-04  -0.510 0.610833    
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 1.216 on 244 degrees of freedom
+    ## Multiple R-squared:  0.152,  Adjusted R-squared:  0.06506 
+    ## F-statistic: 1.749 on 25 and 244 DF,  p-value: 0.01767
+
+In this case the F-test is significant indicating that the regression model fits better than the null model. In other words, atleast 1 predictor in the model can explain the variation in logArea.
+
+Model Selection
+---------------
+
+Model Checking
+--------------
+
+Interpretation of coefficients
+------------------------------
+
+Conclusion
+----------

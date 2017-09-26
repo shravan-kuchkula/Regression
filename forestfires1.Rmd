@@ -378,5 +378,106 @@ mod %>%
 
 ## Multiple Linear Regression
 
+### Fitting a parallel slopes model
+We use the lm() function to fit linear models to data. In this case, we want to understand how the burnt area by forest fire varies as a function of `FFMC` and `season`. From EDA, it appears that `summer` and `fall` seasons tend to have the most extreme forest fires.  
 
+We will fit a parallel slopes model using lm(). In addition to the data argument, lm() needs to know which variables you want to include in your regression model, and how you want to include them. It accomplishes this using a formula argument. A simple linear regression formula looks like y ~ x, where y is the name of the response variable, and x is the name of the explanatory variable. Here, we will simply extend this formula to include multiple explanatory variables. A parallel slopes model has the form y ~ x + z, where z is a categorical explanatory variable, and x is a numerical explanatory variable.
+
+Let's start with building a basic lm object
+
+```{r}
+mod_parallel <- lm(logArea ~ factor(season) + FFMC, data=ff)
+summary(mod_parallel)
+```
+
+Visualize this parallel slopes models:
+Let's first draw a scatter plot of these 3 variables.
+```{r}
+ff %>%
+  ggplot(aes(y = logArea, x = FFMC, color = season)) +
+  geom_point()
+```
+
+Before we draw the parallel regression lines, we need to take a look at the lm object a bit more carefully. Let's use the augment method to check what is contained in the lm object.
+
+```{r}
+mod_parallel %>%
+  augment() %>%
+  head()
+```
+
+The fitted values for each observation is stored in `.fitted`. The categorical variable is stored as `factor.season`. 
+
+Parallel slopes models are so-named because we can visualize these models in the data space as not one line, but two parallel lines. To do this, we'll draw two things:
+
+  1. a scatterplot showing the data, with color separating the points into groups
+  2. a line for each value of the categorical variable
+  
+Our plotting strategy is to compute the fitted values, plot these, and connect the points to form a line. The `augment()` function from the `broom` package provides an easy way to add the fitted values to our data frame, and the `geom_line()` function can then use that data frame to plot the points and connect them.
+
+```{r}
+# scatterplot with color
+data_space <- ggplot(augment(mod_parallel), aes(y = logArea, x = FFMC, color = factor.season.)) +
+  geom_point()
+
+data_space + 
+  geom_line(aes(y = .fitted))
+
+```
+
+### Checking the predictors
+
+Let's build a model by including all the predictors except X and Y. 
+
+```{r}
+fullModel <- lm(formula = logArea ~ factor(season) + FFMC + DMC + DC + ISI + 
+    temp + RH + wind + rain + factor(day), data = ff)
+
+summary(fullModel)
+```
+
+The overall F-test does not seem to be significant. This indicates that we might need to consider including some interactions and/or higher order terms in the model.
+
+### Interactions
+
+What constitutes interactions to be included ?
+
+### Squared Terms
+
+Wind and RH are good candidates for including a squared term. As the logArea seem to be increasing exponentially. 
+
+```{r warning=FALSE, message=FALSE}
+ff$RH2 <- (ff$RH)^2
+ff$wind2 <- (ff$wind)^2
+
+ggplot(ff, aes(y = logArea, x = RH2)) + geom_point() + geom_smooth(se=FALSE)
+ggplot(ff, aes(y = logArea, x = wind2)) + geom_point() + geom_smooth(se=FALSE)
+```
+
+Including RH2 and wind2 in the model
+
+```{r}
+squaredModel <- lm(formula = logArea ~ factor(season) + FFMC + DMC + DC + ISI + 
+    temp + RH + wind + rain + factor(day) + RH2 + wind2, data = ff)
+
+summary(squaredModel)
+```
+
+Including interaction terms:
+
+```{r}
+squaredInteractionModel <- lm(formula = logArea ~ factor(season) + (FFMC + DMC + DC + ISI)^2 +  temp + RH + wind + rain + factor(day) + RH2 + wind2, data = ff)
+
+summary(squaredInteractionModel)
+```
+
+In this case the F-test is significant indicating that the regression model fits better than the null model. In other words, atleast 1 predictor in the model can explain the variation in logArea.
+
+## Model Selection
+
+## Model Checking
+
+## Interpretation of coefficients
+
+## Conclusion
 
