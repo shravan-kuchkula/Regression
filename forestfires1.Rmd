@@ -1,0 +1,382 @@
+---
+title: "Regression Project - Analysis of Forest Fires"
+author: "Shravan Kuchkula"
+date: "9/20/2017"
+output:
+  github_document:
+    toc: yes
+  html_document:
+    keep_md: yes
+    theme: cosmo
+    toc: yes
+  pdf_document:
+    fig_caption: yes
+    highlight: zenburn
+---
+
+## Introduction
+Our main aim is to understand how the burned area of forest fires, in the northeast region of Portugal, is related to the meteorological and other data. The [*forest fires*](http://archive.ics.uci.edu/ml/datasets/Forest+Fires) data set is used to perform this analysis. The data set contains 13 attributes. A brief description of the variables is given here:
+
+* **X** - x-axis spatial coordinate within the Montesinho park map: 1 to 9.
+* **Y** - y-axis spatial coordinate within the Montesinho park map: 2 to 9.
+* **month** - month of the year: 'jan' to 'dec'.
+* **day** - day of the week: 'mon' to 'sun'.
+* **FFMC** - FFMC index from the FWI system.
+* **DMC** - DMC index from the FWI system.
+* **DC** - DC index from the FWI system.
+* **ISI** - ISI index from the FWI system.
+* **temp** - temperature in Celsius degrees.
+* **RH** - relative humidity in %.
+* **wind** - wind speed in km/h.
+* **rain** - outside rain in mm/m2.
+* **area** - the burned area of the forest (in ha).
+
+## Data gathering and cleaning
+All the required libraries are loaded.
+
+```{r message = FALSE, warning = FALSE}
+source('libraries.R')
+source('Main.R')
+```
+
+The data is retrieved and stored into a data frame using `read.csv`.
+
+```{r eval=FALSE}
+ff <- read.csv("http://archive.ics.uci.edu/ml/machine-learning-databases/forest-fires/forestfires.csv")
+```
+
+
+## Exploratory Data Analysis
+The response variable in our analysis is the `area`. A histogram of `area` reveals that a large number of values are zeros. A zero value for area indicates that there were no forest fires. 
+
+```{r message=FALSE , warning=FALSE}
+hist(ff$area, 40)
+```
+
+A log transformation can reveal the distribution of the area variable. However, since we have zeros, the log transform should be done on area + 1, i.e, log(area + 1). The distribution of log(area + 1) is shown:
+```{r message=FALSE, warning=FALSE}
+ff <- ff %>%
+  mutate(logArea = log((area + 1)))
+hist(ff$logArea, 40)
+```
+
+Since we are not interested in predicting whether or not there is a forest fire, but we are interested in answering how much area is burnt due to a forest fire, we will remove the observations which have zeros.
+
+```{r message=FALSE, warning=FALSE}
+ff <- ff %>%
+  filter(logArea > 0) 
+hist(ff$logArea, 40)
+```
+
+Note here that all values are positive which helps in interpretation.
+
+Next, we will see how the transformed response variable correlates with other variables. X, Y, month and day are categrorical variables. A better way to explore the relationship of these categorical variables with the logArea is to draw a box plot.
+
+```{r message=FALSE, warning=FALSE}
+ggplot(ff, aes(x = as.factor(X), y=logArea)) +
+geom_boxplot()
+```
+The box plot reveals that the mean and variation is pretty much the same across all levels of X, which indicates that X may not be a great predictor of logArea.
+
+```{r message=FALSE, warning=FALSE}
+#attach(forestfires)
+ggplot(ff, aes(x = as.factor(Y), y=logArea)) +
+  geom_boxplot()
+```
+
+Same goes with Y. Thus, both the spatial predictors X and Y can safely be ignored from the model. Keeping these discrete variables does not appear to be a good choice.
+
+Next, let's explore how the `month` and `day` categorical variables are related to logArea - our transformed response variable.
+
+```{r message=FALSE, warning=FALSE}
+ggplot(ff, aes(x = as.factor(month), y=logArea)) +
+  geom_boxplot()
+```
+
+There is definitely some variability of `logArea` between each of these `months (groups)`. However, some months don't have much data in them. It is better to even out these observations by categorizing them into seasons. Recoding the month variable into season.
+
+```{r message=FALSE, warning=FALSE}
+
+for (i in 1:270){
+  if(ff$month[i] %in% c("dec", "jan", "feb"))
+      ff$season[i] <- "winter"
+  else if (ff$month[i] %in% c("sep", "oct", "nov"))
+      ff$season[i] <- "fall"
+  else if (ff$month[i] %in% c("jun", "jul", "aug"))
+      ff$season[i] <- "summer"
+  else
+      ff$season[i] <- "spring"
+}
+
+ff %>%
+  ggplot(aes(x = as.factor(ff$season), y=logArea)) +
+    geom_boxplot()
+```
+
+It may not be very obvious from this boxplot, but summer months tend to have a higher values of area burnt by forest fires and also most frequent forest fires occur in summer months. A quick look at the contingency table reveals this fact. Also notice that a large number of values greater than 5 are in the summer months. 
+
+```{r message=FALSE, warning=FALSE}
+table(as.factor(ff$season))
+```
+
+This can be visually verified by this plot:
+
+```{r message=FALSE, warning=FALSE}
+# Create a histogram to check the distribution of values faceted by season.
+ggplot(ff, aes(x = logArea)) +
+  geom_histogram() + 
+  facet_grid(~as.factor(season))
+```
+
+This shows that summer and fall seasons tend to be associated with higher values of logArea. Hence, we should consider to include `season` as a predictor in our model.
+
+The last categorical variable that we need to investigate is the `day` variable. 
+```{r message=FALSE, warning=FALSE}
+ff %>%
+  ggplot(aes(x = as.factor(day), y=logArea)) +
+  geom_boxplot()
+```
+
+Saturday and Sunday appear to have more severe forestfires than the rest of the days. This can be attributed to human involvement, hence this factor should be considered in the model.
+
+Next, we explore the relationship of numeric variables versus the response variable. 
+Create a correlation matrix of all the numeric variables:
+
+```{r message=FALSE, warning=FALSE}
+numericFF <- ff %>%
+  select(-X, -Y, -month, -day, -area, -season)
+
+# Create correlation matrix
+round(cor(numericFF), 2)
+```
+
+Visualize this in a corrplot
+
+```{r message=FALSE, warning=FALSE}
+# Create correlation matrix
+M <- round(cor(numericFF), 2)
+corrplot(M, method="pie", type="lower")
+```
+
+There appear to be some correlation between predictor variables. Very little correlation with the response variable.
+
+Scatter plot of only numeric variables
+```{r message=FALSE, warning=FALSE}
+numericFF %>%
+  select(-temp, -RH, -wind, -rain) %>%
+  ggpairs()
+```
+
+```{r message=FALSE, warning=FALSE}
+numericFF %>%
+  select(-FFMC, -DMC, -DC, -ISI) %>%
+  ggpairs()
+```
+
+## Simple linear regression
+Let's start by building a linear model with the numeric predictors. We will start with something very simple, lets take FFMC as the predictor of logArea
+
+A scatterplot showing the regression line is shown below
+```{r message=FALSE, warning=FALSE}
+p <- ff %>%
+  ggplot(aes(y=logArea, x=FFMC)) + 
+  geom_point()
+```
+
+There are `2 ways` with which you can draw an abline in R:
+
+  1. Using lm and coef, then using the intercept and slope in abline
+  2. Using geom_smooth(method = "lm")
+
+```{r message=FALSE, warning=FALSE}
+coef(lm(logArea~FFMC, data=ff))
+```
+Next, pass these to geom_abline()
+```{r message=FALSE, warning=FALSE}
+p + geom_abline(intercept = 3.044, slope = -0.01)
+```
+
+Instead of using these 2 steps it is possible to get this result using geom_smooth in 1 step:
+
+```{r message=FALSE, warning=FALSE}
+p + geom_smooth(method = "lm", se = FALSE)
+```
+
+When you draw a regression line, it might also help to see the no-affect line (i.e mean of logArea)
+
+```{r message=FALSE, warning=FALSE}
+p + geom_abline(intercept = mean(ff$logArea), slope=0) + geom_smooth(method = "lm", se = FALSE)
+```
+
+Let's take a detour to understand SLR with logArea ~ FFMC and get an understanding of the lm object. 
+
+```{r message=FALSE, warning=FALSE}
+mod <- lm(logArea ~ FFMC, data=ff)
+```
+
+When you display the `mod` object, you see the call and the fitted coefficients
+```{r}
+mod
+```
+
+When you only want to see the fitted coefficients, then you can use `coef` function to get these
+
+```{r}
+coef(mod)
+```
+
+The `summary` function displays a summary of the regression model.
+```{r}
+summary(mod)
+```
+
+Since the object `mod` contains everything R knows about our model, we can ask R for the fitted values using the `fitted.values` function on the `mod` object. This returns a vector containing the Y-hat (predicted) values for each of the observations. For breivty sake, displaying only 20 values.
+
+```{r}
+head(fitted.values(mod), 20)
+```
+
+Each fitted value generates a `residual` value. This residual is the difference of the actual observed value of the response variable and the expected response of the value according to our model. These residuals can be retrieved using the `residuals` funtion on the mod object.
+
+```{r}
+head(residuals(mod), 20)
+```
+
+But, there is an easier way. Using the tidyverse package `broom` - since it's goal is to tidyup a bit. By loading the broom package and calling the `augment` function on the model object, you get a data frame which contains the fitted values and residuals and other info like cook's D for each of the observations. 
+
+```{r message=FALSE, warning=FALSE}
+head(augment(mod), 20)
+```
+
+Working with these tidy data frames makes it easy to work with our model after they are fit.
+For example you can do a task like this - you can examine your residuals by sorting them in the decreasing order. 
+
+```{r message=FALSE, warning=FALSE}
+augment(mod) %>%
+  arrange(desc(.resid)) %>%
+  head()
+```
+
+Now how can we use this model and make predictions ? What would our model predict if FFMC was 99 ? 
+`predict(lm)` - The predict function when applied to an lm object returns the fitted values of the original obs by default. However, if specify `predict(lm, newdata)` - we can then use the model to make predictions to any observations we want. The object passed to newdata must be a dataframe with the same explanatory variable used to build the model. Example:
+
+```{r}
+new_data <- data.frame(FFMC = 99.0)
+predict(mod, newdata = new_data)
+```
+
+You can also visualize the new observations as below:
+
+```{r message=FALSE, warning=FALSE}
+predictedFF <- augment(mod, newdata = new_data)
+
+# plot it
+ggplot(data = ff, aes(x = FFMC, y = logArea)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  geom_point(data = predictedFF, aes(y = .fitted), size = 3, color = "red")
+```
+
+
+### Assessing Model Fit:
+
+Main question here is: How well does this model fit ?
+
+Let's start by calculating the SSE - Sum of squared errors.
+
+```{r}
+mod %>%
+  augment() %>%
+  summarize(SSE = sum(.resid^2))
+```
+
+SSE is a single number which quantifies how much our model missed by. Unfortunately, it is hard to interpret, since its units have been squared. Thus, another common way of thinking about the accuracy of our model is RMSE. The RMSE is essentially the standard deviations of the residuals. 
+
+When R prints the summary of the `mod` object, it prints something called `*Residual standard error*`. This is nothing but RMSE. 
+
+The RMSE is manually calculated as:
+```{r}
+# sqrt(SSE / df)
+sqrt(424.9158/268)
+```
+
+You can scroll up to the summary output to check the `Residual standard error` and compare it with the value calculated here. Thus the `RMSE` or `Residual Standard Error` is a single number which quantifies how much our model is unable to explain. 
+
+This means that according to our model, the predicted logArea is +/- 1.259 points away from the truth.
+
+### Comparing Model fits:
+
+Consider this, if you had to predict logArea when you didn't have any information regarding FFMC, then what would your best guess be ? The average of logArea! That is, a line with no slope and an intercept of mean(logArea).
+
+Now this type of model is called the "null(average)" model. This model serves as a benchmark as it does not require any insight.
+
+We can fit the null model in R using lm but this time including 1 for the explanatory variable. 
+
+```{r}
+mod_null <- lm(logArea ~ 1, data = ff)
+mod_null %>%
+  augment() %>%
+  summarize(SST = sum(.resid^2))
+```
+
+The SSE for the null model is called SST.  Compare this with the SSE for our model with the SST for the null model.
+
+The ratio of SSE/SST is a quantification of the variability explained by our model. 
+By building a regression model we hope to explain that variability. The portion of the SST that is *NOT* explained our model is called the SSE.
+
+These ideas are captured in the R-squared value as:
+
+R-squared = 1 - (SSE/SST) -  which gives the variability explained by our model. 
+
+Interpretation: The proportion of variablity in the response variable that is explained by our model.
+
+Here, I will show how to calculate R-squared manually. Just for the sake of understanding. 
+
+  1. First, we will need a lm object
+  2. Next, tidy it with broom::augment function
+  3. Then use the formula R-squared = 1 - var(e)/var(y)
+
+```{r}
+mod %>%
+  augment() %>%
+  summarize(var_y = sd(logArea)^2, var_e = sd(.resid)^2) %>%
+  mutate(R_squared = 1 - (var_e/var_y))
+```
+
+Compare this with the R-squared value that you got using the summary function. They are the same.
+
+
+### Calculating high-leverage points:
+The leverage of an observation in a regression model is defined entirely in terms of the distance of that observation from the mean of the explanatory variable. That is, observations close to the mean of the explanatory variable have low leverage, while observations far from the mean of the explanatory variable have high leverage. Points of high leverage may or may not be influential.
+
+The augment() function from the broom package will add the leverage scores (.hat) to a model data frame.
+
+```{r}
+# Rank points of high leverage
+mod %>%
+  augment() %>%
+  arrange(desc(.hat)) %>%
+  select(logArea, FFMC, .fitted, .resid, .hat) %>%
+  head()
+```
+
+### Influence:
+
+Large residual, high leverage, high influence. 
+
+As noted previously, observations of high leverage may or may not be influential. The influence of an observation depends not only on its leverage, but also on the magnitude of its residual. Recall that while leverage only takes into account the explanatory variable (x), the residual depends on the response variable (y) and the fitted value (y-hat).
+
+Influential points are likely to have high leverage and deviate from the general relationship between the two variables. We measure influence using `Cook's distance`, which incorporates both the leverage and residual of each observation.
+
+```{r}
+mod %>%
+  augment() %>%
+  arrange(desc(.cooksd)) %>%
+  select(logArea, FFMC, .fitted, .resid, .hat, .cooksd) %>%
+  head()
+```
+
+## Multiple Linear Regression
+
+
+
