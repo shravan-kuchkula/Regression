@@ -839,8 +839,369 @@ In this case the F-test is significant indicating that the regression model fits
 Model Selection
 ---------------
 
+Model selection was done in SAS, as I am yet to figure out how to do it in R. The following predictors resulted in step-wise selection:
+
+Step-wise model selection:
+
+``` r
+stepwise_model <- lm(formula = logArea ~ FFMC + FFMC:DMC + DMC:DC + factor(season) + factor(day), data = ff)
+
+summary(stepwise_model)
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = logArea ~ FFMC + FFMC:DMC + DMC:DC + factor(season) + 
+    ##     factor(day), data = ff)
+    ## 
+    ## Residuals:
+    ##     Min      1Q  Median      3Q     Max 
+    ## -2.2650 -0.8839 -0.1530  0.6890  4.3710 
+    ## 
+    ## Coefficients:
+    ##                        Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept)           4.778e+00  2.599e+00   1.838 0.067220 .  
+    ## FFMC                 -3.848e-02  2.923e-02  -1.317 0.189162    
+    ## factor(season)spring -1.481e-01  3.392e-01  -0.437 0.662716    
+    ## factor(season)summer -1.081e+00  2.489e-01  -4.342 2.04e-05 ***
+    ## factor(season)winter  3.200e-01  3.794e-01   0.843 0.399866    
+    ## factor(day)mon        5.682e-02  2.754e-01   0.206 0.836724    
+    ## factor(day)sat        6.007e-01  2.659e-01   2.259 0.024738 *  
+    ## factor(day)sun        4.017e-01  2.606e-01   1.542 0.124413    
+    ## factor(day)thu        1.612e-01  2.885e-01   0.559 0.576807    
+    ## factor(day)tue        2.901e-01  2.792e-01   1.039 0.299883    
+    ## factor(day)wed        1.393e-01  2.884e-01   0.483 0.629532    
+    ## FFMC:DMC              3.060e-04  8.321e-05   3.677 0.000288 ***
+    ## DMC:DC               -2.842e-05  8.635e-06  -3.291 0.001136 ** 
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 1.217 on 257 degrees of freedom
+    ## Multiple R-squared:  0.1046, Adjusted R-squared:  0.06275 
+    ## F-statistic: 2.501 on 12 and 257 DF,  p-value: 0.004037
+
+Doing a real stepwise Selecting a subset of predictor variables from a larger set (e.g., stepwise selection) is a controversial topic. You can perform stepwise selection (forward, backward, both) using the stepAIC( ) function from the MASS package. stepAIC( ) performs stepwise model selection by exact AIC.
+
+``` r
+fit <- lm(formula = logArea ~ factor(season) + (FFMC + DMC + DC + ISI)^2 +  temp + RH + wind + rain + factor(day) + RH2 + wind2, data = ff)
+library(MASS)
+```
+
+    ## 
+    ## Attaching package: 'MASS'
+
+    ## The following object is masked from 'package:dplyr':
+    ## 
+    ##     select
+
+``` r
+stepwise_model <- stepAIC(fit, direction = "both")
+```
+
+    ## Start:  AIC=130.17
+    ## logArea ~ factor(season) + (FFMC + DMC + DC + ISI)^2 + temp + 
+    ##     RH + wind + rain + factor(day) + RH2 + wind2
+    ## 
+    ##                  Df Sum of Sq    RSS    AIC
+    ## - factor(day)     6    9.5917 370.26 125.26
+    ## - rain            1    0.0008 360.67 128.17
+    ## - DMC:ISI         1    0.0162 360.68 128.19
+    ## - temp            1    0.0228 360.69 128.19
+    ## - FFMC:ISI        1    0.2031 360.87 128.33
+    ## - DC:ISI          1    0.3838 361.05 128.46
+    ## - RH2             1    2.5429 363.21 130.07
+    ## <none>                        360.67 130.17
+    ## - FFMC:DC         1    2.6816 363.35 130.17
+    ## - RH              1    3.0600 363.73 130.46
+    ## - DMC:DC          1    4.1298 364.80 131.25
+    ## - FFMC:DMC        1    4.9158 365.58 131.83
+    ## - wind2           1    6.1965 366.86 132.77
+    ## - wind            1    7.2047 367.87 133.51
+    ## - factor(season)  3   24.3585 385.03 141.82
+    ## 
+    ## Step:  AIC=125.26
+    ## logArea ~ factor(season) + FFMC + DMC + DC + ISI + temp + RH + 
+    ##     wind + rain + RH2 + wind2 + FFMC:DMC + FFMC:DC + FFMC:ISI + 
+    ##     DMC:DC + DMC:ISI + DC:ISI
+    ## 
+    ##                  Df Sum of Sq    RSS    AIC
+    ## - rain            1    0.0069 370.27 123.27
+    ## - DMC:ISI         1    0.0751 370.33 123.31
+    ## - temp            1    0.0767 370.34 123.32
+    ## - FFMC:ISI        1    0.5019 370.76 123.63
+    ## - DC:ISI          1    0.6082 370.87 123.70
+    ## - RH2             1    2.7452 373.00 125.25
+    ## <none>                        370.26 125.26
+    ## - FFMC:DC         1    2.9217 373.18 125.38
+    ## - RH              1    2.9635 373.22 125.41
+    ## - DMC:DC          1    3.4635 373.72 125.77
+    ## - FFMC:DMC        1    5.9327 376.19 127.55
+    ## - wind2           1    6.3072 376.57 127.82
+    ## - wind            1    7.1410 377.40 128.42
+    ## + factor(day)     6    9.5917 360.67 130.17
+    ## - factor(season)  3   24.3100 394.57 136.43
+    ## 
+    ## Step:  AIC=123.27
+    ## logArea ~ factor(season) + FFMC + DMC + DC + ISI + temp + RH + 
+    ##     wind + RH2 + wind2 + FFMC:DMC + FFMC:DC + FFMC:ISI + DMC:DC + 
+    ##     DMC:ISI + DC:ISI
+    ## 
+    ##                  Df Sum of Sq    RSS    AIC
+    ## - temp            1    0.0718 370.34 121.32
+    ## - DMC:ISI         1    0.0755 370.34 121.32
+    ## - FFMC:ISI        1    0.5135 370.78 121.64
+    ## - DC:ISI          1    0.6087 370.87 121.71
+    ## <none>                        370.27 123.27
+    ## - RH2             1    2.7545 373.02 123.27
+    ## - FFMC:DC         1    2.9158 373.18 123.38
+    ## - RH              1    3.0081 373.27 123.45
+    ## - DMC:DC          1    3.4627 373.73 123.78
+    ## + rain            1    0.0069 370.26 125.26
+    ## - FFMC:DMC        1    5.9273 376.19 125.55
+    ## - wind2           1    6.3125 376.58 125.83
+    ## - wind            1    7.1367 377.40 126.42
+    ## + factor(day)     6    9.5978 360.67 128.17
+    ## - factor(season)  3   24.3093 394.57 134.43
+    ## 
+    ## Step:  AIC=121.32
+    ## logArea ~ factor(season) + FFMC + DMC + DC + ISI + RH + wind + 
+    ##     RH2 + wind2 + FFMC:DMC + FFMC:DC + FFMC:ISI + DMC:DC + DMC:ISI + 
+    ##     DC:ISI
+    ## 
+    ##                  Df Sum of Sq    RSS    AIC
+    ## - DMC:ISI         1    0.0773 370.41 119.37
+    ## - FFMC:ISI        1    0.4770 370.81 119.67
+    ## - DC:ISI          1    0.6162 370.95 119.77
+    ## - RH2             1    2.7009 373.04 121.28
+    ## <none>                        370.34 121.32
+    ## - FFMC:DC         1    3.0945 373.43 121.56
+    ## - RH              1    3.1122 373.45 121.58
+    ## - DMC:DC          1    3.4035 373.74 121.79
+    ## + temp            1    0.0718 370.27 123.27
+    ## + rain            1    0.0020 370.34 123.32
+    ## - FFMC:DMC        1    6.2946 376.63 123.87
+    ## - wind2           1    6.5392 376.88 124.04
+    ## - wind            1    7.2687 377.61 124.57
+    ## + factor(day)     6    9.6449 360.69 126.19
+    ## - factor(season)  3   25.6554 395.99 133.40
+    ## 
+    ## Step:  AIC=119.37
+    ## logArea ~ factor(season) + FFMC + DMC + DC + ISI + RH + wind + 
+    ##     RH2 + wind2 + FFMC:DMC + FFMC:DC + FFMC:ISI + DMC:DC + DC:ISI
+    ## 
+    ##                  Df Sum of Sq    RSS    AIC
+    ## - FFMC:ISI        1    0.4405 370.85 117.69
+    ## - DC:ISI          1    1.2428 371.66 118.28
+    ## - RH2             1    2.6279 373.04 119.28
+    ## <none>                        370.41 119.37
+    ## - RH              1    3.0405 373.45 119.58
+    ## - FFMC:DC         1    3.3048 373.72 119.77
+    ## - DMC:DC          1    3.3363 373.75 119.80
+    ## + DMC:ISI         1    0.0773 370.34 121.32
+    ## + temp            1    0.0736 370.34 121.32
+    ## + rain            1    0.0022 370.41 121.37
+    ## - wind2           1    6.7518 377.17 122.25
+    ## - wind            1    7.5291 377.94 122.81
+    ## - FFMC:DMC        1    8.5606 378.98 123.54
+    ## + factor(day)     6    9.7064 360.71 124.20
+    ## - factor(season)  3   25.7667 396.18 131.53
+    ## 
+    ## Step:  AIC=117.7
+    ## logArea ~ factor(season) + FFMC + DMC + DC + ISI + RH + wind + 
+    ##     RH2 + wind2 + FFMC:DMC + FFMC:DC + DMC:DC + DC:ISI
+    ## 
+    ##                  Df Sum of Sq    RSS    AIC
+    ## - DC:ISI          1    1.4199 372.27 116.73
+    ## - RH2             1    2.3412 373.20 117.39
+    ## - RH              1    2.6961 373.55 117.65
+    ## <none>                        370.85 117.69
+    ## - FFMC:DC         1    2.8726 373.73 117.78
+    ## - DMC:DC          1    3.7477 374.60 118.41
+    ## + FFMC:ISI        1    0.4405 370.41 119.37
+    ## + DMC:ISI         1    0.0408 370.81 119.67
+    ## + temp            1    0.0372 370.82 119.67
+    ## + rain            1    0.0112 370.84 119.69
+    ## - wind2           1    6.4504 377.31 120.35
+    ## - wind            1    7.2615 378.12 120.93
+    ## + factor(day)     6    9.9303 360.92 122.37
+    ## - FFMC:DMC        1    9.8031 380.66 122.74
+    ## - factor(season)  3   26.2577 397.11 130.16
+    ## 
+    ## Step:  AIC=116.73
+    ## logArea ~ factor(season) + FFMC + DMC + DC + ISI + RH + wind + 
+    ##     RH2 + wind2 + FFMC:DMC + FFMC:DC + DMC:DC
+    ## 
+    ##                  Df Sum of Sq    RSS    AIC
+    ## - RH2             1    2.3729 374.65 116.44
+    ## - ISI             1    2.4639 374.74 116.51
+    ## - RH              1    2.7639 375.04 116.72
+    ## <none>                        372.27 116.73
+    ## - DMC:DC          1    3.6682 375.94 117.37
+    ## + DC:ISI          1    1.4199 370.85 117.69
+    ## + DMC:ISI         1    0.6544 371.62 118.25
+    ## + FFMC:ISI        1    0.6176 371.66 118.28
+    ## - wind2           1    5.3127 377.59 118.55
+    ## + temp            1    0.0451 372.23 118.69
+    ## + rain            1    0.0154 372.26 118.72
+    ## - wind            1    6.3161 378.59 119.27
+    ## - FFMC:DC         1    7.1188 379.39 119.84
+    ## + factor(day)     6   10.5927 361.68 120.93
+    ## - FFMC:DMC        1    9.7509 382.03 121.71
+    ## - factor(season)  3   26.3629 398.64 129.20
+    ## 
+    ## Step:  AIC=116.44
+    ## logArea ~ factor(season) + FFMC + DMC + DC + ISI + RH + wind + 
+    ##     wind2 + FFMC:DMC + FFMC:DC + DMC:DC
+    ## 
+    ##                  Df Sum of Sq    RSS    AIC
+    ## - RH              1    0.5664 375.21 114.85
+    ## - ISI             1    2.1035 376.75 115.95
+    ## <none>                        374.65 116.44
+    ## + RH2             1    2.3729 372.27 116.73
+    ## + DC:ISI          1    1.4515 373.20 117.39
+    ## - DMC:DC          1    4.3435 378.99 117.56
+    ## + DMC:ISI         1    0.4456 374.20 118.12
+    ## + FFMC:ISI        1    0.2639 374.38 118.25
+    ## - wind2           1    5.4553 380.10 118.34
+    ## + rain            1    0.0250 374.62 118.42
+    ## + temp            1    0.0131 374.63 118.43
+    ## - wind            1    6.8158 381.46 119.31
+    ## - FFMC:DC         1    6.9337 381.58 119.39
+    ## + factor(day)     6   10.5353 364.11 120.74
+    ## - FFMC:DMC        1   10.0266 384.67 121.57
+    ## - factor(season)  3   28.9849 403.63 130.56
+    ## 
+    ## Step:  AIC=114.85
+    ## logArea ~ factor(season) + FFMC + DMC + DC + ISI + wind + wind2 + 
+    ##     FFMC:DMC + FFMC:DC + DMC:DC
+    ## 
+    ##                  Df Sum of Sq    RSS    AIC
+    ## - ISI             1    2.2177 377.43 114.44
+    ## <none>                        375.21 114.85
+    ## + DC:ISI          1    1.5256 373.69 115.75
+    ## - DMC:DC          1    4.4932 379.71 116.06
+    ## + RH              1    0.5664 374.65 116.44
+    ## + DMC:ISI         1    0.5316 374.68 116.47
+    ## - wind2           1    5.2577 380.47 116.61
+    ## + temp            1    0.3273 374.89 116.61
+    ## + RH2             1    0.1753 375.04 116.72
+    ## + FFMC:ISI        1    0.1313 375.08 116.76
+    ## + rain            1    0.0728 375.14 116.80
+    ## - wind            1    6.5096 381.72 117.49
+    ## - FFMC:DC         1    8.4349 383.65 118.85
+    ## + factor(day)     6   10.3373 364.88 119.31
+    ## - FFMC:DMC        1   11.6988 386.91 121.14
+    ## - factor(season)  3   30.4699 405.68 129.93
+    ## 
+    ## Step:  AIC=114.44
+    ## logArea ~ factor(season) + FFMC + DMC + DC + wind + wind2 + FFMC:DMC + 
+    ##     FFMC:DC + DMC:DC
+    ## 
+    ##                  Df Sum of Sq    RSS    AIC
+    ## <none>                        377.43 114.44
+    ## + ISI             1     2.218 375.21 114.85
+    ## - DMC:DC          1     4.468 381.90 115.62
+    ## + RH              1     0.681 376.75 115.95
+    ## - wind2           1     5.097 382.53 116.06
+    ## + temp            1     0.289 377.14 116.23
+    ## + RH2             1     0.264 377.17 116.25
+    ## + rain            1     0.035 377.40 116.42
+    ## - wind            1     5.802 383.23 116.56
+    ## - FFMC:DC         1     8.283 385.72 118.30
+    ## + factor(day)     6    10.814 366.62 118.59
+    ## - FFMC:DMC        1    10.165 387.60 119.62
+    ## - factor(season)  3    36.716 414.15 133.51
+
+``` r
+stepwise_model$anova
+```
+
+    ## Stepwise Model Path 
+    ## Analysis of Deviance Table
+    ## 
+    ## Initial Model:
+    ## logArea ~ factor(season) + (FFMC + DMC + DC + ISI)^2 + temp + 
+    ##     RH + wind + rain + factor(day) + RH2 + wind2
+    ## 
+    ## Final Model:
+    ## logArea ~ factor(season) + FFMC + DMC + DC + wind + wind2 + FFMC:DMC + 
+    ##     FFMC:DC + DMC:DC
+    ## 
+    ## 
+    ##             Step Df    Deviance Resid. Df Resid. Dev      AIC
+    ## 1                                     244   360.6667 130.1737
+    ## 2  - factor(day)  6 9.591710644       250   370.2584 125.2604
+    ## 3         - rain  1 0.006901833       251   370.2653 123.2654
+    ## 4         - temp  1 0.071815750       252   370.3372 121.3178
+    ## 5      - DMC:ISI  1 0.077280234       253   370.4144 119.3741
+    ## 6     - FFMC:ISI  1 0.440489227       254   370.8549 117.6950
+    ## 7       - DC:ISI  1 1.419853354       255   372.2748 116.7268
+    ## 8          - RH2  1 2.372873663       256   374.6477 116.4423
+    ## 9           - RH  1 0.566358919       257   375.2140 114.8501
+    ## 10         - ISI  1 2.217659790       258   377.4317 114.4413
+
+``` r
+detach("package:MASS", unload=TRUE)
+```
+
+As per stepwise model selection, our final model is:
+
+logArea ~ factor(season) + FFMC + DMC + DC + wind + wind2 + FFMC:DMC + FFMC:DC + DMC:DC
+
+``` r
+finalModel <- lm(formula = logArea ~ factor(season) + FFMC + DMC + DC + wind + wind2 + FFMC:DMC + FFMC:DC + DMC:DC, data = ff)
+
+summary(finalModel)
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = logArea ~ factor(season) + FFMC + DMC + DC + wind + 
+    ##     wind2 + FFMC:DMC + FFMC:DC + DMC:DC, data = ff)
+    ## 
+    ## Residuals:
+    ##     Min      1Q  Median      3Q     Max 
+    ## -2.0470 -0.9207 -0.1647  0.7354  4.3309 
+    ## 
+    ## Coefficients:
+    ##                        Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept)          -1.806e+00  5.427e+00  -0.333   0.7396    
+    ## factor(season)spring -5.489e-01  6.708e-01  -0.818   0.4140    
+    ## factor(season)summer -1.209e+00  2.666e-01  -4.536 8.78e-06 ***
+    ## factor(season)winter  1.911e-01  6.701e-01   0.285   0.7757    
+    ## FFMC                  3.805e-02  6.260e-02   0.608   0.5438    
+    ## DMC                  -1.307e-01  5.997e-02  -2.180   0.0302 *  
+    ## DC                    2.820e-02  1.182e-02   2.385   0.0178 *  
+    ## wind                  3.248e-01  1.631e-01   1.991   0.0475 *  
+    ## wind2                -3.174e-02  1.701e-02  -1.867   0.0631 .  
+    ## FFMC:DMC              1.674e-03  6.350e-04   2.636   0.0089 ** 
+    ## FFMC:DC              -3.239e-04  1.361e-04  -2.380   0.0181 *  
+    ## DMC:DC               -1.922e-05  1.100e-05  -1.748   0.0817 .  
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 1.21 on 258 degrees of freedom
+    ## Multiple R-squared:  0.1125, Adjusted R-squared:  0.0747 
+    ## F-statistic: 2.974 on 11 and 258 DF,  p-value: 0.0009759
+
 Model Checking
 --------------
+
+Now lets check the predicted vs response variable graph
+
+``` r
+ff$prediction <- predict(finalModel)
+
+ggplot(data = ff, aes(x = prediction, y = logArea)) + 
+    geom_point() +
+    geom_abline(color = "blue")
+```
+
+![](forestfires1_files/figure-markdown_github/unnamed-chunk-49-1.png)
+
+This is how well our model fits the data.
+
+Use this model to make predictions ?
 
 Interpretation of coefficients
 ------------------------------

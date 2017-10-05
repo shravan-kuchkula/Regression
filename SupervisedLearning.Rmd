@@ -1,0 +1,19 @@
+---
+title: "RegressionML"
+author: "Shravan Kuchkula"
+date: "10/4/2017"
+output: html_document
+---
+
+## Supervised Learning in R: Regression
+Regression is a task of predicting a numerical outcome (or dependent variable) based on the values of a set of inputs (or independent variables). 
+
+Difference b/w Regression and Classification ?
+Regression deals with predicting numeric or continuous variable.
+Classification deals with predicting discrete or categorical variable.
+
+Example:
+Predicting the number of products you are going to sell is a regression problem.
+Will the customer buy the product (yes/no) ? is a classification problem.
+What price the customer will pay for our product is a regression problem.
+

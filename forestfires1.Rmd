@@ -473,9 +473,59 @@ summary(squaredInteractionModel)
 
 In this case the F-test is significant indicating that the regression model fits better than the null model. In other words, atleast 1 predictor in the model can explain the variation in logArea.
 
+
 ## Model Selection
 
+Model selection was done in SAS, as I am yet to figure out how to do it in R. The following predictors resulted in step-wise selection:
+
+Step-wise model selection:
+
+```{r}
+stepwise_model <- lm(formula = logArea ~ FFMC + FFMC:DMC + DMC:DC + factor(season) + factor(day), data = ff)
+
+summary(stepwise_model)
+```
+
+Doing a real stepwise
+Selecting a subset of predictor variables from a larger set (e.g., stepwise selection) is a controversial topic. You can perform stepwise selection (forward, backward, both) using the stepAIC( ) function from the MASS package. stepAIC( ) performs stepwise model selection by exact AIC.
+
+```{r}
+fit <- lm(formula = logArea ~ factor(season) + (FFMC + DMC + DC + ISI)^2 +  temp + RH + wind + rain + factor(day) + RH2 + wind2, data = ff)
+library(MASS)
+stepwise_model <- stepAIC(fit, direction = "both")
+stepwise_model$anova
+detach("package:MASS", unload=TRUE)
+```
+
+As per stepwise model selection, our final model is:
+
+logArea ~ factor(season) + FFMC + DMC + DC + wind + wind2 + FFMC:DMC + 
+    FFMC:DC + DMC:DC
+
+
+```{r}
+finalModel <- lm(formula = logArea ~ factor(season) + FFMC + DMC + DC + wind + wind2 + FFMC:DMC + FFMC:DC + DMC:DC, data = ff)
+
+summary(finalModel)
+```
+
 ## Model Checking
+
+Now lets check the predicted vs response variable graph
+
+```{r}
+ff$prediction <- predict(finalModel)
+
+ggplot(data = ff, aes(x = prediction, y = logArea)) + 
+    geom_point() +
+    geom_abline(color = "blue")
+```
+
+This is how well our model fits the data. 
+
+Use this model to make predictions ?
+
+
 
 ## Interpretation of coefficients
 
