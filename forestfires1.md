@@ -18,6 +18,12 @@ Shravan Kuchkula
     -   [Squared Terms](#squared-terms)
 -   [Model Selection](#model-selection)
 -   [Model Checking](#model-checking)
+    -   [Predicted vs Response Variable graph](#predicted-vs-response-variable-graph)
+    -   [Residual vs Predicted](#residual-vs-predicted)
+    -   [RMSE (Root Mean Squared Error)](#rmse-root-mean-squared-error)
+-   [Best practices for training and evaluating a regression model.](#best-practices-for-training-and-evaluating-a-regression-model.)
+    -   [Train a model using test/train split.](#train-a-model-using-testtrain-split.)
+    -   [Evaluate a model using test/train split](#evaluate-a-model-using-testtrain-split)
 -   [Interpretation of coefficients](#interpretation-of-coefficients)
 -   [Conclusion](#conclusion)
 
@@ -53,7 +59,8 @@ source('Main.R')
 The data is retrieved and stored into a data frame using `read.csv`.
 
 ``` r
-ff <- read.csv("http://archive.ics.uci.edu/ml/machine-learning-databases/forest-fires/forestfires.csv")
+#ff <- read.csv("http://archive.ics.uci.edu/ml/machine-learning-databases/forest-fires/forestfires.csv")
+ff <- read.csv("/Users/Shravan/Desktop/forestfires.csv")
 ```
 
 Exploratory Data Analysis
@@ -1187,6 +1194,8 @@ summary(finalModel)
 Model Checking
 --------------
 
+### Predicted vs Response Variable graph
+
 Now lets check the predicted vs response variable graph
 
 ``` r
@@ -1201,7 +1210,184 @@ ggplot(data = ff, aes(x = prediction, y = logArea)) +
 
 This is how well our model fits the data.
 
+Seems random. This means that the errors are not systematic, i.e, they are not correlated with the outcome. When the model doesn't fit well, there will be regions where the points are completely above or below the line, i.e some pattern is observed. This indicates that the errors are systematic and that the errors are correlated with the outcome variable. This means that we do not yet have a good model.
+
 Use this model to make predictions ?
+
+### Residual vs Predicted
+
+First lets calculate the residuals, which is, residuals = ( predicted - original response variable )
+
+We already have stored the predictions in the `ff$predictions` variable, using the `predict` function. We now need to calculate the `residual` values.
+
+``` r
+# Calculate residuals
+ff$residuals <- ff$prediction - ff$logArea
+
+# plot predictions (on x-axis) versus the residuals
+ggplot(ff, aes(x = prediction, y = residuals)) + 
+  geom_pointrange(aes(ymin = 0, ymax = residuals)) + 
+  geom_hline(yintercept = 0, linetype = 3) + 
+  ggtitle("residuals vs. linear model prediction")
+```
+
+![](forestfires1_files/figure-markdown_github/unnamed-chunk-50-1.png)
+
+Residual plot - the errors should be evenly distributed between positive and negative, with roughly the same number above and below and preferablly with similar magnitude.
+
+### RMSE (Root Mean Squared Error)
+
+A key metric to gauge the power of a model to predict is by looking at the RMSE.
+
+Steps to calculate the RMSE are:
+
+1.  Calculate error: prediction - original response
+2.  Square it: (prediction - original response)^2
+3.  Calculate mean: mean(squared(error))
+4.  Square root: sqrt(mean(squared(error)))
+
+``` r
+# Calculate the errors (residuals). This is already stored in ff$residuals
+# Square the residuals
+# Calculate the sum of residuals
+# Calculate the mean of the squared residuals by using df instead of 270.
+# Calculate sqrt
+RMSE <- sqrt((sum(ff$residuals * ff$residuals))/258)
+RMSE
+```
+
+    ## [1] 1.20951
+
+Calculate the standard deviation of the response variable.
+
+``` r
+sd(ff$logArea)
+```
+
+    ## [1] 1.257381
+
+As noted earlier, the RMSE is the standard deviation of the residuals. You just now calculated the standard deviation of the response variable. That is, how far are the response variable points away from the mean - when no explanatory variables are in the model.
+
+If RMSE &lt; SD(response variable), then it indicates the accuracy of our model predictions.
+
+In other words, the true prediction is about +/- RMSE points away from the truth.
+
+I guess the smaller the RMSE, the better our prediction.
+
+Yes, an RMSE much smaller than the outcome's standard deviation suggests a model that predicts well.
+
+Best practices for training and evaluating a regression model.
+--------------------------------------------------------------
+
+In general, a model performs well on the training data, than the data it has yet seen. Using only the training data in complex models with many variables can lead to misleading results.
+
+How to split the data into training and test ?
+
+1.  Calculate the number of rows (N)
+2.  Use runif(N) - which will generate uniform random numbers between 0 and 1 in a vector.
+3.  Pass this vector into the dataframe as a logical vector.
+
+``` r
+# Calculate N
+N <- nrow(ff)
+
+# Create a random number vector
+rvec <- runif(N)
+
+# Select rows from the FF dataframe
+ff_train <- ff[rvec < 0.75,]
+ff_test <- ff[rvec >= 0.75,]
+
+# Check how many rows
+nrow(ff_train)
+```
+
+    ## [1] 200
+
+``` r
+nrow(ff_test)
+```
+
+    ## [1] 70
+
+In the above example, we split the ff dataset into training (75%) and test (25%) datasets. Now that we have split the ff dataset into ff\_train and ff\_test, we will use ff\_train to train a model to predict logArea from stepwise predictors.
+
+### Train a model using test/train split.
+
+Train a model (ff\_model) on ff\_train to predict logArea based on stepwise predictors.
+
+``` r
+# Define the model and use ff_train instead of ff
+ff_model <- lm(formula = logArea ~ factor(season) + FFMC + DMC + DC + wind + wind2 + FFMC:DMC + FFMC:DC + DMC:DC, data = ff_train)
+
+# Use summary to examine the model
+summary(ff_model)
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = logArea ~ factor(season) + FFMC + DMC + DC + wind + 
+    ##     wind2 + FFMC:DMC + FFMC:DC + DMC:DC, data = ff_train)
+    ## 
+    ## Residuals:
+    ##     Min      1Q  Median      3Q     Max 
+    ## -1.9756 -0.9513 -0.2023  0.7771  4.2629 
+    ## 
+    ## Coefficients:
+    ##                        Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept)          -7.399e-01  9.889e+00  -0.075   0.9404    
+    ## factor(season)spring -1.039e+00  7.907e-01  -1.314   0.1906    
+    ## factor(season)summer -1.363e+00  3.225e-01  -4.228 3.68e-05 ***
+    ## factor(season)winter -3.821e-02  8.160e-01  -0.047   0.9627    
+    ## FFMC                  2.894e-02  1.115e-01   0.260   0.7955    
+    ## DMC                  -1.288e-01  7.476e-02  -1.722   0.0867 .  
+    ## DC                    2.627e-02  1.797e-02   1.462   0.1455    
+    ## wind                  3.980e-01  1.954e-01   2.037   0.0430 *  
+    ## wind2                -3.887e-02  1.999e-02  -1.945   0.0533 .  
+    ## FFMC:DMC              1.665e-03  7.829e-04   2.127   0.0347 *  
+    ## FFMC:DC              -3.104e-04  2.038e-04  -1.523   0.1295    
+    ## DMC:DC               -1.949e-05  1.360e-05  -1.433   0.1535    
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 1.249 on 188 degrees of freedom
+    ## Multiple R-squared:  0.1237, Adjusted R-squared:  0.07244 
+    ## F-statistic: 2.413 on 11 and 188 DF,  p-value: 0.007932
+
+### Evaluate a model using test/train split
+
+Now we will test the model `ff_model` on the test data, `ff_test`. Generally, model performance is better on the training data than the test data (though sometimes the test set "gets lucky"). A slight difference in performance is okay; if the performance on training is significantly better, there is a problem.
+
+Predict the logArea from the stepwise predictors on the `ff_train` dataset. Assign the predictions to the column `pred`.
+
+``` r
+# predict logArea from stepwise predictors for the training data set, store in pred col.
+ff_train$pred <- predict(ff_model)
+
+# predict logArea from stepwise predictors for the test data set, store in pred col.
+ff_test$pred <- predict(ff_model, newdata = ff_test)
+
+# Define a function called rmse
+rmse <- function (predcol, ycol, df) {
+  res = predcol - ycol
+  sqrt((sum(res * res))/df)
+}
+
+# Calculate the rmse for training model.
+# df = nrow(ff_train - number of variables in the model)
+rmse(ff_train$pred, ff_train$logArea, 198)
+```
+
+    ## [1] 1.217467
+
+``` r
+# Caculate the rmse for test model.
+rmse(ff_test$pred, ff_test$logArea, 50)
+```
+
+    ## [1] 1.308852
+
+RMSE of training is better than the RMSE of test data set. This is expected.
 
 Interpretation of coefficients
 ------------------------------
