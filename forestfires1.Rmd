@@ -443,6 +443,35 @@ The overall F-test does not seem to be significant. This indicates that we might
 
 What constitutes interactions to be included ?
 
+In earlier chapters we said that linear regression assumes that inputs affects the outcome linearly and `"additively"`. Now we will start to look at cases which violate this assumption. In this lesson we will learn about variable interactions. Before we dive into interactions, let's review what a additive relationship is:
+
+Example of an additive relationship:
+` plant_height ~ bacteria + sun `
+
+- Change in height is the sum of the effects of bacteria and sunlight.
+  - Change in sunlight causes same change in height, independent of bacteria.
+  - Change in bacteria causes same change in height, independent of sunlight.
+  
+
+However, if the bacteria is different for different levels of sunlight, then there is an interaction  between bacteria and sunlight. There is a simultaneous influence of two variables on the outcome. 
+
+- Change in height is more than the sum of the effects due to sun or bacteria. 
+- At higher levels of sunlight, 1 unit change in bacteria causes more change in height. 
+
+> The simultaneous influence of two variables on the outcome is not additive
+
+Now, lets suppose that sun is a categorical variable with 2 levels {"sun", "shade"}
+
+> plant_height ~ bacteria + sun + bacteria:sun
+
+- In sun, 1 unit change in bacteria causes m units change in height.
+- In shade, 1 unit change in bacteria causes n units change in height.
+
+Like 2 separate models, one for sun, one for shade.
+
+### Visualize interactions in forest fires data set.
+
+
 ### Squared Terms
 
 Wind and RH are good candidates for including a squared term. As the logArea seem to be increasing exponentially. 
@@ -656,6 +685,10 @@ rmse(ff_test$pred, ff_test$logArea, 50)
 ```
 
 RMSE of training is better than the RMSE of test data set. This is expected. 
+
+### Cross-Validation 
+
+Preferred when data is not large enough to split off a test set. In a n-fold cross validation, you partition the data in n-subsets. 
 
 
 ## Interpretation of coefficients

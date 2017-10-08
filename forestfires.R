@@ -54,6 +54,7 @@ nFF <- ff %>%
   select(-X, -Y, -month, -day, -season, -area)
 
 
+
 # Regression 
 
 ggplot(forestfires, aes(x=FFMC, y=logArea)) +
