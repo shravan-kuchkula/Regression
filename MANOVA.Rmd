@@ -3,11 +3,11 @@ title: "MANOVA"
 author: "Shravan Kuchkula"
 date: "9/20/2017"
 output:
-  github_document:
-    toc: yes
   html_document:
     keep_md: yes
     theme: cosmo
+    toc: yes
+  github_document:
     toc: yes
   pdf_document:
     fig_caption: yes
@@ -117,9 +117,99 @@ ggplot(data = hemophil, aes(x = Activity, y = Antigen, color = Group)) +
   geom_point()
 ```
 
+There are two ways of expressing the relationship between variables:
 
+* **Covariance** 
+* **Correlation**
 
+Covariance refers to how much two variables are associated (i.e., whether two variables covary). To understand covariance, you’ll need to understand the variance and standard deviation of a single variable. Variance or standard deviation represents the average amount the data vary from the mean. The formula for variance (i.e., square of standard deviation $\sigma$) is:
 
+$$ \sigma^2 = \frac{\sum_{i=1}^{n}(x_i - \overline{x})^2} {n-1} $$
 
+$$ \sigma^2 = \frac{\sum_{i=1}^{n}(x_i - \overline{x})(x_i - \overline{x})} {n-1} $$
 
+When two variables are related, changes in one variable are met with similar changes in the other variable. Thus, when one variable deviates from its mean, the other variable should deviate in a similar way.
+
+To do this in R manually, let's consider the hemophil data set. 
+
+```{r}
+tempHemophil <- hemophil %>%
+  mutate (sdev_activity = Activity - mean(Activity), sdev_Antigen = Antigen - mean(Antigen))
+head(tempHemophil)
+
+```
+
+The two variables `Activity` and `Antigen` clearly are related (see scatterplot). They covary because as one variables deviates from the mean in one direction, the other variable deviates from the mean in the same direction.
+
+When there is one variable, we square the deviations to get variance:
+
+$$ \sigma^2 = \frac{\sum_{i=1}^{n}(x_i - \overline{x})(x_i - \overline{x})} {n-1} $$
+
+When there are two variables, we mutliply the deviation for one variable by the corresponding variable for the second variable to get the cross-product deviations:
+
+$$ (x_i - \overline{x})(y_i - \overline{y}) $$
+
+then we sum the cross-product deviations,
+
+$$ \sum_{i=1}^{n}(x_i - \overline{x})(y_i - \overline{y}) $$
+
+and finally we average the sum of all cross-product deviations to get the covariance cov(x, y):
+
+$$ cov(x, y) = \frac{\sum_{i=1}^{n}(x_i - \overline{x})(y_i - \overline{y})} {n-1} $$
+
+We can calculate the covariance in R as:
+```{r}
+tempHemophil <- tempHemophil %>%
+  mutate(crossProduct = sdev_activity * sdev_Antigen, 
+         covariance = sum(crossProduct) / (nrow(tempHemophil) - 1)) 
+```
+
+Display the covariance
+
+```{r}
+head(tempHemophil)
+```
+
+The covariance between these 2 variables `Activity` and `Antigen` is 0.01219725
+
+Now, compare this with running `cov` from the stats package:
+
+```{r}
+cov(hemophil$Activity, hemophil$Antigen)
+```
+
+Now, recall that we are interested in this Covariance topic because we are interested in learning about MANOVA. The concept of variance-covariance matrix comes into picture. 
+
+In a variance-covariance matrix, the diagnol elements represent the `variance` and the non-diagnol elements represent the covariance between the variables.
+
+A positive covariance indicates that as one variable deviates from the mean, the other variables deviates in the same direction. A negative covariance indicates that as one variable deviates from the mean (e.g., increases), the other variable deviates in the opposite direction (e.g., decreases).
+
+However, the size of the covariance depends on the scale of measurement. Larger scale units will lead to larger covariance. To overcome the problem of dependence on measurement scale, we need to convert convariance to a standard set of units through standardisation by dividing the covariance by the standard deviation (i.e., similar to how we compute z-scores).
+
+With two variables, here are two standard deviations. We simply multiply the two standard deviations $ \sigma_{x}*\sigma_{y} $ We divide the covariance by the product of the two standard deviations to get the standardised covariance, which is know n as a correlation coefficient r:
+
+$$ r = \frac{\sum_{i=1}^{n}(x_i - \overline{x})(y_i - \overline{y})} {(n-1)(\sigma_{x}\sigma_{y})} $$
+
+```{r}
+(pearsonR <- cov(hemophil$Activity, hemophil$Antigen) / (sd(hemophil$Activity) * sd(hemophil$Antigen)))
+```
+
+To calculate the p-value:
+
+```{r}
+cor.test(hemophil$Activity, hemophil$Antigen)$p.value
+```
+
+> Note: The value of the covariance depends on the scale of measurement. A larger scale will yield a large covariance. To overcome the problem of dependence on measurement scale, we need to convert convariance to a standard set of units through standardisation by dividing the covariance by the standard deviation. By dividing the covariance of two variables by the product of their sd, we will get the correlation coefficient. 
+
+Coming back to the main question:
+
+Provide a scatterplot for Carrier vs Non-Carrier for your final variables used in #2 and color code the points by group. Since we know each variable satistifies normality from #2, the only additional question is if the data are following multivariate normality with a constant covariance matrix for each group. Try to explain what visual properties you see in the plot would lead you for or against the assumption of constant covariance matrix. Recall covariance matrix is simply book keeping variance and correlation estimates for the two variables. 
+
+```{r}
+# Scatter plot of Carrier vs Non-Carrier
+ggplot(data = hemophil, aes(x = Activity, y = Antigen)) +
+  geom_point() +
+  facet_grid(.~ factor(Group))
+```
 
