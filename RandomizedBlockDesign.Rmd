@@ -1,0 +1,58 @@
+---
+title: "Randomized Block Design"
+author: "Shravan Kuchkula"
+date: "10/10/2017"
+output:
+  html_document:
+    keep_md: yes
+    theme: cosmo
+    toc: yes
+  github_document:
+    toc: yes
+  pdf_document:
+    fig_caption: yes
+    highlight: zenburn
+---
+## Introduction
+
+Suppose you're interested in the T-cell counts of patients taking one of three medications, including a placebo, and you conduct an experiment. In this design, your primary variable, or factor of interest, is the type of medication. But you later realize that other factors, nuisance factors, play a role in the results of your experiment. For example, you believe that the ages of the patients greatly affect the responses to the medications. In an effort to control the factors that contribute to the outcome you want to measure, you redesign your experiment to group the patients by age groups: under 30, 30 to 50, and over 50. You're not interested in the effect of age on T-cell counts, but you're interested in grouping, or blocking by age to minimize variability, thus leading to greater precision. Here's what you learn in this topic.
+
+- Recognize the difference b/w a completely randomized design and a randomized blocked design.
+- Differentiate b/w observed data and designed experiments.
+- Analyze data from a randomized block design in R.
+
+## Questions
+
+- What is a Randomized block design ?
+- Waht is an observational study ?
+- What is a Randomized study ?
+
+## Observation Study
+
+Observational Studies Versus Controlled Experiments
+
+An observational, or retrospective, study is when you want to draw inferences about the effects of a treatment on subjects, but the assignment of the subjects into a treated group versus a controlled group is outside of your control. For example, in an observational study, the gender or ethnicity of the subjects naturally occurs, so you simply record this data as you observe it because it is what it is. Oftentimes in an observational study, you look back at data that's already been collected because it's the best that you can do based on resource issues or ethical issues. For example, it's unethical to assign someone to a smoking or a non-smoking group, so you attempt to answer questions like "Does smoking cause lung cancer" by looking at data where subjects have not been randomly assigned to smoke, but where you merely observe whether someone smokes. In an observational study, you sometimes have very little control over other factors that contribute to the outcome you're measuring. 
+
+In a controlled experiment, you have the flexibility to design the analysis prospectively and control for other factors that contribute to the outcome that you're measuring. You can do this by blocking, or grouping, to minimize variability. You might also design a controlled experiment with the intention of reducing selection bias. For example, you randomly assign each subject to a treatment group or a control group before the start of the experiment. Randomization lessens the effects of things you can't control for in your experiment.
+
+## Nuisance Factors
+Nuisance factors are factors that can affect the outcome of your experiment but are not of interest in your study. For example, in the T-cell count scenario, a factor that might affect the measured results, that is, patient responses to the medications, is patient age, but the effect of age isn’t your primary interest. The variation due to Age becomes part of the random variation. In a randomized block design, you can use a blocking variable to control for the nuisance factors and reduce or eliminate their contribution to the experimental error. You typically need to spend some time deciding which nuisance factors are important enough to keep track of or, if possible, to control during the experiment.
+
+
+## Including a Blocking Variable in the Model
+
+This mathematical model is a way to represent the relationship between the response and predictor variables in ANOVA. This model includes a blocking variable. Including a blocking variable in the model is in essence like adding a second treatment variable to the model in terms of the way you write it. The way you set up your experiment and the way you collect the data is what defines it as a blocking factor. Let's look at the parts of this model.
+
+> Note: Check the SAS video for the formula
+
+In a model that does not include Age Group, the Age Group effects are lumped into the error term of the model, and it becomes harder to detect the effect of Medication. When you include Age Group in the model, you have now explained some of the variability in the error term that was previously unaccounted for. Although you're not specifically interested in the effect of age, controlling for Age Group has made it easier to detect an effect of the medication.
+
+## More ANOVA Assumptions
+
+Along with the three original ANOVA assumptions of independent observations, normally distributed errors, and equal variances across treatments, you make two more assumptions when you include a blocking factor in the model. First, you assume that the treatments are randomly assigned within each block. In the T-cell count example, this means that you assume the three medications are randomly assigned to each of the three age groups. Next, you assume that the effects of the treatment factor are constant across the levels of the blocking factor, meaning that the effects of the treatment factor don't depend on the block they are in. When the effects of the treatment factor are not constant across the levels of another variable, it's called interaction. But when you use a randomized block design, you assume that the effects are the same within each block. In other words, you assume that there are no interactions with the blocking variable.
+
+
+## Scenario: Creating a Randomized Block Design
+
+In their original study, the Montana Gourmet Garlic farmers randomly assigned their fertilizers to plants in each of their 32 beds. Given the negative results of their study, meaning that there was no statistically significant difference between the mean bulb weights for the four fertilizers, the farmers consulted a statistician before planning their next study. They decide to rigorously control the influences on the growth of garlic. Here's a question. Can you think of some possible nuisance factors in the growth of garlic? Sun exposure, the pH level of the soil, and rain are examples of possible nuisance factors. They likely affect the weight of the garlic bulbs, but they are not the primary concern. The statistician suggests ways to account for these nuisance variables in their experimental design. Although they can't actually apply the nuisance factors randomly, in other words, they can't change the weather or the soil pH or the sun exposure, they can control for these factors by blocking. He suggests that whatever the effects of the external influences are, the magnitudes of the nuisance factors should be approximately the same within sectors of the farm land. Therefore, instead of randomizing the fertilizer treatment across all 32 beds, he suggests that they randomize the application of the four fertilizer treatments within each of eight sectors. Based on this recommendation, the farmers divide the farm into eight sectors, each of which has four beds, and in each of the four beds, they randomly assign each of the four fertilizers. An experimental design like this is often referred to as a randomized block design. As you can see in this ANOVA model, Sector is the blocking variable.
+

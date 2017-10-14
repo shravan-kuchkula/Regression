@@ -108,6 +108,45 @@ leveneTest(hemophil$Antigen, hemophil$Group, center = mean)
 
 In both cases the p-value is not significant, which means, we will fail to reject the null hypothesis - which is that of equal variances. 
 
+## Post Hoc tests
+The F-test showed a significant effect somewhere among the groups. However, it did not tell you which pairwise comparisons are significant. This is where post-hoc tests come into play. They help you to find out which groups differ significantly from one other and which do not. More formally, post-hoc tests allow for multiple pairwise comparisons without inflating the type I error.
+
+What does it mean to inflate the type I error?
+
+Suppose the post-hoc test involves performing three pairwise comparisons, each with the probability of a type I error set at 5%. The probability of making at least one type I error is then equal to 
+
+$$ 1−(no:type:I:error:×:no:type:I:error:×:no:type:I:error) $$
+
+If, for simplicity, you assume independence of these three events, the maximum familywise error rate becomes 1−(0.95×0.95×0.95)=14.26%. In other words, the probability of having at least one false alarm (i.e. type I error) is 14.26%.
+
+Anytime you engage in NHST*, a type I error can occur. In a situation were you do multiple pairwise comparisons, the probability of type I errors in the process inflates substantially. Therefore, it is better to build in adjustments to take this into account. This is what Tukey tests and other post-hoc procedures do. They adjust the p-value to prevent inflation of the type I error rate.
+
+> *Null Hypothesis Significance Testing (NHST) is a statistical method used to test whether or not you are able to reject or retain the null hypothesis. This type of test can confront you with a type I error. This happens when the test rejects the null hypothesis, while it is actually true in reality. Furthermore, the test can also deliver a type II error. This is the failure to reject a null hypothesis when it is false. All hypothesis tests have a probability of making type I and II errors.
+
+> TYPE I Error: When comparing the means for the levels of a factor in an analysis of variance, a simple comparison using t-tests will inflate the probability of declaring a significant difference when it is not in fact present. "Detecting a significant difference when it is not in fact present! FALSE POSITIVE."
+
+### Tukey's procedure
+
+In R you can use the Tukey's procedure via `TukeyHSD()` function.
+```{r}
+# Conduct ANOVA
+anova_activity <- aov(hemophil$Activity ~ hemophil$Group)
+
+# summarize the model
+summary(anova_activity)
+
+# Conduct Tukey procedure
+(tukey <- TukeyHSD(anova_activity, ordered=TRUE))
+
+# Plot it
+plot(tukey)
+
+```
+
+### Bonferroni adjusted p-values
+Just like Tukey's procedure, the Bonferroni correction is a method that is used to counteract the problem of inflated type I errors while engaging in multiple pairwise comparisons between subgroups. Bonferroni is generally known as the most conservative method to control the familywise error rate.
+
+
 ## Understanding Covariance
 
 Provide a scatterplot for Carrier vs Non-Carrier for your final variables used in #2 and color code the points by group. Since we know each variable satistifies normality from #2, the only additional question is if the data are following multivariate normality with a constant covariance matrix for each group. Try to explain what visual properties you see in the plot would lead you for or against the assumption of constant covariance matrix. Recall covariance matrix is simply book keeping variance and correlation estimates for the two variables.  
