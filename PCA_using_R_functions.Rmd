@@ -1,0 +1,237 @@
+---
+title: "PCA_using_R_functions.Rmd"
+author: "Shravan Kuchkula"
+date: "10/14/2017"
+output:
+  github_document:
+    toc: yes
+  html_document:
+    keep_md: yes
+    theme: cosmo
+    toc: yes
+  pdf_document:
+    fig_caption: yes
+    highlight: zenburn
+---
+
+## Introduction
+
+How to use the `prcomp` and `varimax` functions in R to accomplish a Principal Components Analysis. 
+We cover the following steps: 
+
+* Read in the Data
+* Plot a Correlation Matrix
+* Call prcomp
+* DotPlot the PCA loadings 
+* Apply the Kaiser Criterion 
+* Make a screeplot
+* Plot the Biplot and
+* Apply the varimax rotation.
+
+## Getting the data
+
+```{r message=FALSE}
+# Install the required packages and load them.
+# install.packages("calibrate")
+source("libraries.R")
+library(lattice)
+library(dplyr)
+```
+
+Download the dataset
+```{r}
+insurance <- read.csv("/Users/Shravan/Downloads/Unit8Exercise/Insurance.csv")
+glimpse(insurance)
+```
+
+## Data set description
+In the 1970s, the U.S. Commission on Civil Rights investigated charges that insur- ance companies were attempting to redefine Chicago “neighborhoods” in order to cancel existing homeowner insurance policies or refuse to issue new ones. Data on homeowner and residential fire insurance policy issuances from 47 zip codes in the Chicago area form our data set. Six variables describe general zip code features:
+
+* **fire**    - fires per 1,000 housing units
+* **theft**   - thefts per 1,000 population
+* **age**     - percentage of housing units built prior to 1940
+* **income**  - median family income
+* **race**    - percentage minority
+* **zip**     - the last two digits of the zip code (the first three being 606)
+
+Chicago’s FAIR plan provided a way for households that were rejected by the voluntary insurance market to obtain insurance coverage. These policies were issued involuntarily by the insurance industry. 
+
+* **vol**     - is the number of new policies per 100 housing units
+* **invol**   - is the number of FAIR plan policies/renewals per 100 housing units.
+
+Lastly, Location is a re-coded variable from the zip variable, dividing the localities into either `North` or `South`.
+
+* **location**  - Derived from the zipcode of the locality as either North or South
+
+## Exploratory Data Analysis
+
+Let's create a correlation matrix of all the zip code variables: `{fire, theft, age, income, race}`
+
+```{r}
+corMatrix <- insurance %>%
+                dplyr::select(Fire, Theft, Age, Income, Race)
+
+# Create the correlation matrix
+round(cor(corMatrix), 2)
+```
+
+Visualize this in a corrplot
+
+```{r}
+M <- round(cor(corMatrix), 2)
+corrplot(M, method="pie", type = "lower")
+```
+
+Scatter plot of the zip code variables
+
+```{r message=FALSE, warning=FALSE}
+corMatrix %>%
+  ggpairs()
+```
+
+## Doing PCA
+Next let's call the procedure `prcomp` to do the PCA.
+
+```{r}
+# running pca on the zip code variables.
+my.prc <- prcomp(corMatrix, center = T, scale = T)
+```
+
+The name of the procedure is prcomp and underneath the hood it uses a singular value decomposition to accomplish the PCA. The procedure takes the dataset and `center = T` which indicates that we want to center the data and `scale = T` scale it to unit variance.
+
+Now we have the result of the analysis in my.prc. Let's examine this object by calling `ls()` on this object.
+```{r}
+ls(my.prc)
+```
+
+So with this object, we can get the centered data, the rotations, the standard deviations and the scores which the prcomp function calls them as x.
+
+Now let's take a summary look at `my.prc` object.
+
+```{r}
+summary(my.prc)
+```
+
+So, what we see here is that we have five components. The first component accounts for 55% of the variation, second component is 18%, third component is 15% etc.
+
+Now, the first 3 components account for 89% of the variation. At this point, you may have a question of how many of these components to keep ? There is atleast two ways to answer this:
+
+1. First is using the Keiser Criterion. What this says is that, the `eigen values` associated with each component if that is greater than 1, then you retain that component. **NOTE**: The `eigen value` associated with each component not the `eigen vector`. Now you may be wondering how do we get the eigen value for each component ? We actually have that information on our finger tips in the form of `sdev` standard deviations of the my.prc object. Now, if we square the `sdev` values we get the `eigen values` back. Now the reason this works is because the sum of eigen values is the sum total of the variance in the dataset. The `sdev` is the square root of that, a singular value. So if we square that information we get the eigen values back.
+
+```{r}
+my.prc$sdev ^ 2
+```
+
+What we see here is that only the first is greater than 1 and the rest are not. So according to Keiser Criterion, we would retain only PC1.
+
+2. Second way to answer this question is using a plot called the `scree plot`. A bar plot of the principal components. You see that they account for less variation down the line. The idea here is that to retain the components that are contributing significantly. 
+
+```{r}
+screeplot(my.prc, main= "Scree Plot", xlab = "Components")
+```
+
+Another way to look at screeplots is by using a line plot instead
+
+```{r}
+screeplot(my.prc, type = "line", main = "Scree Plot")
+```
+
+It is the same plot, instead of bars we have lines. We see that PC4 and PC5 are approaching zero. So using this criteria, I would keep principal components 1 definitely and 2 may be. Let's keep the first two principal components.
+
+The next steps is to take a look at the principal components themselves. 
+```{r}
+my.prc$rotation
+```
+
+What we can see here is that each of the PC's are a linear combination of each of the variables. These coefficients are called as `loadings` or `rotations`. And they indicate to what extent that variable is correlated with that specific component. For example, in PC1, Fire and Income are the major contributors. Another concept here is that Income is being contrasted by the other variables, since it has an opposite sign. In PC2, we see that Theft is strongly correlated with principal component and is being contrasted by Race.
+
+There is an easier way to look at these loadings than by inspecting the values. In our case we have 5 variables, but imagine having 100 variables. That becomes tedious. So we have an easy way to visualize this information. In other words, we need a better approach to examine these relationships. Now, ofcourse we can look at the "Bi-plot", but we will get to that momentarily. But one useful techniques is to look at the `dotplot` of the loadings.
+
+```{r}
+load <- my.prc$rotation
+sorted.loadings <- load[order(load[, 1]), 1]
+myTitle <- "Loadings Plot for PC1" 
+myXlab  <- "Variable Loadings"
+dotplot(sorted.loadings, main=myTitle, xlab=myXlab, cex=1.5, col="red")
+```
+
+Here we are seeing the loadings for PC1, it is much easier to see relationships amoung variables in this plot. We can see here that Fire, Race and Income are major contributors of PC1.
+
+
+```{r}
+load <- my.prc$rotation
+sorted.loadings <- load[order(load[, 1]), 2]
+myTitle <- "Loadings Plot for PC2" 
+myXlab  <- "Variable Loadings"
+dotplot(sorted.loadings, main=myTitle, xlab=myXlab, cex=1.5, col="red")
+```
+
+In this case, we see that Theft is contributing to the PC2 component. In PC2, the dominant variable relate to Theft.
+
+Of course the premier visualization tool for PCA is the "Bi-Plot". Recall, that the Bi in the Bi-Plot comes from the fact that we are plotting the variables as vectors onto the same graph as the observations as points. I will go ahead and call that function:
+
+```{r}
+# Now draw the BiPlot
+biplot(my.prc, cex=c(1, 0.7))
+```
+
+So, here is the "Bi-Plot". Now, we have already done the "dotplots" of the principal components, so we have some idea about the variables and observations. One thing you should recall about the variables is that the cosine of the angle between the vectors is infact the correlation between the variables. So for example, Income is strongly negatively correlated with Race and Fire. We already looked at the correlation and dotplots and knew that this might be the case. So in this component the PC1 we might consider that points towards income are contrasted with points close to Race and Fire. Let's take a look at observation 23 which is close to Race and Fire and observation 13 which is close to Income.
+
+```{r}
+insurance[c(13, 23),]
+```
+
+This is what the Bi-Plot shows. 
+
+Now when we look at PC2, the observations 45 is contrasted with observation 7. Take a look:
+
+```{r}
+insurance[c(7,45),]
+```
+
+In PC2, Theft is the major contributor, thus look at the contrast for observations 7 and 45.
+
+Therefore, by looking at the Bi-plot, we would expect to find that points to be of a certain value based on where they are located. 
+
+## Varimax rotation
+
+One thing we can do to improve our understanding of Bi-plots and PCA is to apply something called `Varimax Rotation`. What that is, is that it is a change of co-ordinates such that it maximizes the sum of the variance of the squared loadings. It's whole goal is to clean up, if you will, all the rotations that we found when we called prcomp. 
+
+Varimax takes as an argument the rotation values returned from prcomp. 
+
+```{r}
+my.var <- varimax(my.prc$rotation)
+```
+
+Now, if we take a look at that, what we get is a rotation on top of a rotation. 
+```{r}
+my.var
+```
+
+Now, what we are seeing here in the loadings is that, for each Factor (that is PC column in loadings section) high correlation were resolved for few of these variables and the rest will be near-zero. So the blanks suggest that these variables are more or less towards zero after the varimax rotation, leaving us to consider that Race is the primary contributor of PC1 and Theft is the primary contributor in PC2.
+
+So we refine our understanding of what is going on in PC1, that Race is the dominant contributor and not Fire or Income, which we originally thought are the primary contributors (by looking at the dot plots for the PC1). With regards to PC2, Theft is still the dominant contributor, which is consistent with what we found looking at the dotplot for PC2.
+
+The Varimax rotation is a tweak and is part of the base R package, so you can use it whenever you do principal components analysis.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
