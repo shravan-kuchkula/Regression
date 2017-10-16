@@ -10,6 +10,7 @@ Shravan Kuchkula
 -   [Doing PCA](#doing-pca)
 -   [Varimax rotation](#varimax-rotation)
 -   [Additional Things](#additional-things)
+-   [What is PCA and when to use it ?](#what-is-pca-and-when-to-use-it)
 
 Introduction
 ------------
@@ -489,6 +490,14 @@ var(my.pca.cov$scores[,5]))
 
     ## [1] 7587476
 
+Also the sum of the eigen values is equal to the total variance
+
+``` r
+sum(my.cov.eigen$values)
+```
+
+    ## [1] 7587476
+
 > Compare the scatterplot matrices for original data and the scores data.
 
 ``` r
@@ -496,7 +505,7 @@ data.frame(my.pca.cov$scores) %>%
   ggpairs()
 ```
 
-![](PCA_using_R_functions_files/figure-markdown_github/unnamed-chunk-29-1.png)
+![](PCA_using_R_functions_files/figure-markdown_github/unnamed-chunk-30-1.png)
 
 Visualize the corrplot
 
@@ -505,4 +514,17 @@ M1 <- round(cor(data.frame(my.pca.cov$scores)), 2)
 corrplot(M1, method="pie", type = "lower")
 ```
 
-![](PCA_using_R_functions_files/figure-markdown_github/unnamed-chunk-30-1.png)
+![](PCA_using_R_functions_files/figure-markdown_github/unnamed-chunk-31-1.png)
+
+What is PCA and when to use it ?
+--------------------------------
+
+Principal component analysis is a multivariate technique for examining relationships among several quantitative variables. You can use principal components to reduce the number of variables in regression, clustering, and so on. Given a data set with *p* numeric variables, you can compute *p* principal components. Each principal component is a linear combination of the original variables, with coefficients equal to the eigenvectors of the correlation or covariance matrix. The eigenvectors are customarily taken with unit length. The principal components are sorted by descending order of the eigenvalues, which are equal to the variances of the components.
+
+Principal components have a variety of useful properties:
+
+-   The eigenvectors are orthogonal, so the principal components represent jointly perpendicular directions through the space of the original variables.
+-   The principal component scores are jointly uncorrelated. Note that this property is quite distinct from the previous one.
+-   The first principal component has the largest variance of any unit-length linear combination of the observed variables.
+
+> How are the original variables correlated with principal components 1 and 2 ?
