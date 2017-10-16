@@ -9,6 +9,7 @@ Shravan Kuchkula
 -   [Exploratory Data Analysis](#exploratory-data-analysis)
 -   [Doing PCA](#doing-pca)
 -   [Varimax rotation](#varimax-rotation)
+-   [Additional Things](#additional-things)
 
 Introduction
 ------------
@@ -300,3 +301,208 @@ Now, what we are seeing here in the loadings is that, for each Factor (that is P
 So we refine our understanding of what is going on in PC1, that Race is the dominant contributor and not Fire or Income, which we originally thought are the primary contributors (by looking at the dot plots for the PC1). With regards to PC2, Theft is still the dominant contributor, which is consistent with what we found looking at the dotplot for PC2.
 
 The Varimax rotation is a tweak and is part of the base R package, so you can use it whenever you do principal components analysis.
+
+Additional Things
+-----------------
+
+> The sum of the eigen values is equal to the total variance in the dataset.
+
+So, lets verify this. As we saw in our previous article, we can calculate the covariance matrix of the dataset using the `cov` function
+
+``` r
+(my.cov <- cov(corMatrix))
+```
+
+    ##                Fire       Theft          Age      Income        Race
+    ## Fire       86.53215    55.72248     86.56604  -15639.852    179.6992
+    ## Theft      55.72248   211.22664    110.54991   -3579.785    152.2057
+    ## Age        86.56604   110.54991    509.62900  -32870.515    184.2926
+    ## Income -15639.85153 -3579.78538 -32870.51475 7585606.666 -63161.9526
+    ## Race      179.69924   152.20574    184.29259  -63161.953   1061.9526
+
+Convert this into a correlation matrix using the `cov2cor()` function
+
+``` r
+(my.cor <- cov2cor(my.cov))
+```
+
+    ##              Fire       Theft        Age      Income       Race
+    ## Fire    1.0000000  0.41216143  0.4122225 -0.61044807  0.5927956
+    ## Theft   0.4121614  1.00000000  0.3369434 -0.08943088  0.3213691
+    ## Age     0.4122225  0.33694341  1.0000000 -0.52866953  0.2505118
+    ## Income -0.6104481 -0.08943088 -0.5286695  1.00000000 -0.7037328
+    ## Race    0.5927956  0.32136909  0.2505118 -0.70373285  1.0000000
+
+> Calculate the eigen values from both the "my.cov" matrix and "my.cor" matrix
+
+Eigen values from the `my.cov` matrix:
+
+``` r
+(my.cov.eigen <- eigen(my.cov))
+```
+
+    ## $values
+    ## [1] 7.586309e+06 5.975363e+02 4.137852e+02 1.157325e+02 3.995145e+01
+    ## 
+    ## $vectors
+    ##               [,1]         [,2]         [,3]         [,4]         [,5]
+    ## [1,] -0.0020617673 -0.097740929 -0.123122260 -0.209894627  0.965001355
+    ## [2,] -0.0004721111 -0.243966789 -0.485518217 -0.798134174 -0.260257343
+    ## [3,] -0.0043331964  0.252841469 -0.860436215  0.442219199  0.012004758
+    ## [4,]  0.9999537066 -0.006974434 -0.004990079  0.004031319  0.001670201
+    ## [5,] -0.0083267254 -0.931101211 -0.093475068  0.351215055 -0.029859620
+
+Eigen values from the `my.cor` matrix:
+
+``` r
+(my.cor.eigen <- eigen(my.cor))
+```
+
+    ## $values
+    ## [1] 2.7586160 0.9496824 0.7537101 0.3865744 0.1514171
+    ## 
+    ## $vectors
+    ##            [,1]        [,2]       [,3]       [,4]       [,5]
+    ## [1,] -0.5048229 -0.03090255  0.1890711  0.8296296 -0.1420061
+    ## [2,] -0.3090776 -0.83261158  0.2407813 -0.2183405  0.3249320
+    ## [3,] -0.3985347 -0.19233538 -0.8163274 -0.1235444 -0.3500337
+    ## [4,]  0.5050429 -0.45724546  0.1426136  0.1371460 -0.7047769
+    ## [5,] -0.4855169  0.24441088  0.4685589 -0.4795518 -0.5049944
+
+Compare this with the loadings we got from running the prcomp function. The Eigen values are the same and the sum of the Eigen values calculated using the `my.cor` matrix is equal to the total sum of variance in the dataset (which is 5).
+
+``` r
+sum(my.cor.eigen$values)
+```
+
+    ## [1] 5
+
+> Use covariance matrix instead of correlation matrix to do the PCA.
+
+``` r
+# Call princomp with scores = TRUE to get the scores.
+my.pca.cov <- princomp(corMatrix, scores=TRUE)
+
+# print the scores. This is equivalent in sas to out=pca.
+my.pca.cov$scores
+```
+
+    ##             Comp.1     Comp.2       Comp.3      Comp.4        Comp.5
+    ##  [1,]  1048.342536  16.866765  -1.60963599   2.2568241  -3.047238254
+    ##  [2,] -1372.730624  22.481135 -12.21114960  13.2767588  -7.981161960
+    ##  [3,]  -747.723193  21.638446  -8.74458187   6.8218225  -3.848605330
+    ##  [4,]   -39.702918  17.203034  -6.52446223   7.9045195  -5.638918245
+    ##  [5,]  -965.792243  16.632197 -22.93209591  15.6556457 -10.522061158
+    ##  [6,] -2464.903348 -13.814342  -3.85130943  41.3979869   6.451385710
+    ##  [7,] 10783.979806 -62.479913 -57.32538544  10.3922699   5.812609413
+    ##  [8,]   408.321630  31.222243  -8.46428823 -10.7813255  -0.273956322
+    ##  [9,]    -1.701629  35.480039 -22.59214642  -3.1663383  -3.763081248
+    ## [10,] -1064.799261  28.435592 -16.59110168  -7.5896916   3.062722157
+    ## [11,] -2700.905730  14.374731 -10.43067187   4.6807893  10.767774182
+    ## [12,]  3026.427934  10.301204  14.50798910  -6.4700736   0.323529085
+    ## [13,]  5554.359236  -9.957197  13.51140832 -12.8466010   8.559402104
+    ## [14,]  2990.567262   2.527724  44.07690302   5.4000674   0.443103177
+    ## [15,]  1709.378081  23.006985  -3.19419108  -5.3247657  -3.400301840
+    ## [16,]  1502.444424  22.528964  11.05562911  -2.7689229  -2.110520104
+    ## [17,]   904.313045  32.317424 -20.30780929  -6.9697009  -2.997867220
+    ## [18,]  2069.457231  19.350615  18.10660149  -8.4249716   0.079839130
+    ## [19,]   388.330348  34.373037 -18.21662482  -2.7633150  -2.674909340
+    ## [20,]  -185.774867  28.627150 -22.64782442  -4.2977079   3.471405280
+    ## [21,]  -912.061128 -16.412601 -13.67636405  -1.8302066  -0.583500106
+    ## [22,] -3354.237191 -29.780541  -1.24670154 -10.2124846  -1.777312188
+    ## [23,] -4131.131425 -23.139712   5.26812036  11.0528935  11.886851702
+    ## [24,] -3236.969329   7.370439 -16.29462599  16.8159108  16.509813329
+    ## [25,] -2682.118985 -11.863878  -2.51532408 -16.1753226   2.712126648
+    ## [26,] -2518.987055   2.410947  -6.17264296  -3.9798261   6.361352779
+    ## [27,] -2483.896109 -15.065243  12.80344388  18.4380612  -9.291272971
+    ## [28,]   534.368931  29.994777  -5.08513418  -3.5276487  -2.622711773
+    ## [29,] -2365.876239  14.757116  11.33240553 -18.9894208  11.882691507
+    ## [30,] -5113.171786 -24.513600  13.92440318  -1.6157745  -1.620028123
+    ## [31,] -2132.114490 -19.000183  -9.78331834  -5.2899797  -9.975062419
+    ## [32,]  1406.503699   7.375286  37.72913012   6.3600373  -1.810997085
+    ## [33,]  1180.402193  23.599867  -3.98720702   6.2334401  -4.494931911
+    ## [34,]  -954.009799  -2.523315 -12.26295306  -8.0215285  14.799494806
+    ## [35,] -3176.262207 -36.201423   1.26742452 -10.8188792  -2.631006467
+    ## [36,] -3308.196151 -26.230733  -1.64812643  -9.1784012  -8.953038300
+    ## [37,]  3146.581519  -1.322792  45.14549913  12.4798531   0.433643177
+    ## [38,]   343.860485 -40.770847  -9.84741775  -0.1312633  -5.015151972
+    ## [39,]  -364.287879 -56.320587  -5.39409679  -8.3198624  -7.204617525
+    ## [40,]   211.867454 -31.597581 -16.14228334  -5.0975101  -5.334514112
+    ## [41,]   460.148486  -5.889601  -2.07211771   1.3726743  -1.708702469
+    ## [42,]  2627.547847   5.382116  35.27157467  10.7654209   0.567702587
+    ## [43,]  2264.093784 -26.265273   7.57399707  -7.7032317   2.872030645
+    ## [44,]   564.148299  -4.460435   0.02464132  -2.2828703   4.694965578
+    ## [45,]  -615.668900 -12.475250  57.88423882  -3.0853367   0.007255889
+    ## [46,]   732.206832  -4.731733  10.16301232  -4.5454854  -1.996060749
+    ## [47,]  3035.371428   6.558948   2.12516955   0.9034713  -0.422169691
+
+Next calculate the summary statistics of these 5 principal component scores:
+
+Calculate the variance for each principal component
+
+``` r
+# variance of the principal components
+var(my.pca.cov$scores[,1])
+```
+
+    ## [1] 7586309
+
+``` r
+var(my.pca.cov$scores[,2])
+```
+
+    ## [1] 597.5363
+
+``` r
+var(my.pca.cov$scores[,3])
+```
+
+    ## [1] 413.7852
+
+``` r
+var(my.pca.cov$scores[,4])
+```
+
+    ## [1] 115.7325
+
+``` r
+var(my.pca.cov$scores[,5])
+```
+
+    ## [1] 39.95145
+
+``` r
+round(my.cov.eigen$values, 4)
+```
+
+    ## [1] 7586309.0010     597.5363     413.7852     115.7325      39.9515
+
+> Hence, the variance of the principal components are their eigen values. Sum of the variances of the principal components is equal to the total variance in the dataset.
+
+``` r
+sum(var(my.pca.cov$scores[,1]),
+var(my.pca.cov$scores[,2]),
+var(my.pca.cov$scores[,3]),
+var(my.pca.cov$scores[,4]),
+var(my.pca.cov$scores[,5]))
+```
+
+    ## [1] 7587476
+
+> Compare the scatterplot matrices for original data and the scores data.
+
+``` r
+data.frame(my.pca.cov$scores) %>%
+  ggpairs()
+```
+
+![](PCA_using_R_functions_files/figure-markdown_github/unnamed-chunk-29-1.png)
+
+Visualize the corrplot
+
+``` r
+M1 <- round(cor(data.frame(my.pca.cov$scores)), 2)
+corrplot(M1, method="pie", type = "lower")
+```
+
+![](PCA_using_R_functions_files/figure-markdown_github/unnamed-chunk-30-1.png)

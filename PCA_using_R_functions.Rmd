@@ -214,10 +214,91 @@ So we refine our understanding of what is going on in PC1, that Race is the domi
 
 The Varimax rotation is a tweak and is part of the base R package, so you can use it whenever you do principal components analysis.
 
+## Additional Things
 
+> The sum of the eigen values is equal to the total variance in the dataset.
 
+So, lets verify this. As we saw in our previous article, we can calculate the covariance matrix of the dataset using the `cov` function
 
+```{r}
+(my.cov <- cov(corMatrix))
+```
 
+Convert this into a correlation matrix using the `cov2cor()` function
+
+```{r}
+(my.cor <- cov2cor(my.cov))
+```
+
+> Calculate the eigen values from both the "my.cov" matrix and "my.cor" matrix
+
+Eigen values from the `my.cov` matrix:
+```{r}
+(my.cov.eigen <- eigen(my.cov))
+```
+
+Eigen values from the `my.cor` matrix:
+```{r}
+(my.cor.eigen <- eigen(my.cor))
+```
+
+Compare this with the loadings we got from running the prcomp function. The Eigen values are the same and the sum of the Eigen values calculated using the `my.cor` matrix is equal to the total sum of variance in the dataset (which is 5). 
+
+```{r}
+sum(my.cor.eigen$values)
+```
+
+> Use covariance matrix instead of correlation matrix to do the PCA.
+
+```{r}
+# Call princomp with scores = TRUE to get the scores.
+my.pca.cov <- princomp(corMatrix, scores=TRUE)
+
+# print the scores. This is equivalent in sas to out=pca.
+my.pca.cov$scores
+```
+
+Next calculate the summary statistics of these 5 principal component scores:
+
+Calculate the variance for each principal component
+```{r}
+# variance of the principal components
+var(my.pca.cov$scores[,1])
+var(my.pca.cov$scores[,2])
+var(my.pca.cov$scores[,3])
+var(my.pca.cov$scores[,4])
+var(my.pca.cov$scores[,5])
+```
+
+```{r}
+round(my.cov.eigen$values, 4)
+```
+
+> Hence, the variance of the principal components are their eigen values.
+> Sum of the variances of the principal components is equal to the total variance in the dataset.
+
+```{r}
+sum(var(my.pca.cov$scores[,1]),
+var(my.pca.cov$scores[,2]),
+var(my.pca.cov$scores[,3]),
+var(my.pca.cov$scores[,4]),
+var(my.pca.cov$scores[,5]))
+```
+
+> Compare the scatterplot matrices for original data and the scores data.
+
+```{r message=FALSE, warning=FALSE}
+
+data.frame(my.pca.cov$scores) %>%
+  ggpairs()
+```
+
+Visualize the corrplot
+
+```{r}
+M1 <- round(cor(data.frame(my.pca.cov$scores)), 2)
+corrplot(M1, method="pie", type = "lower")
+```
 
 
 
