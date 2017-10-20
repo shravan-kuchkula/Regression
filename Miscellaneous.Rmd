@@ -1,0 +1,35 @@
+---
+title: "Miscellaneous"
+author: "Shravan Kuchkula"
+date: "10/19/2017"
+output:
+  html_document:
+    keep_md: yes
+    theme: cosmo
+    toc: yes
+  github_document:
+    toc: yes
+  pdf_document:
+    fig_caption: yes
+    highlight: zenburn
+---
+
+## Introduction
+This page is going to cover all the nifty things that we can do with R to do exploratory data analysis. 
+
+## Dataframes
+### How to merge 2 dataframes ?
+### How to subset using `subset` function ?
+### How to tabulate categorical variables ?
+
+## Vectors and Lists
+## Matrix operations
+## Common patterns
+### Use nrow and subsetting
+### Variables in a dataset ?
+To find the variables in a particular dataset, use `names`
+```{r}
+names(mtcars)
+```
+
+

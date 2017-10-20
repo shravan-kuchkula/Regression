@@ -108,6 +108,10 @@ leveneTest(hemophil$Antigen, hemophil$Group, center = mean)
 
 In both cases the p-value is not significant, which means, we will fail to reject the null hypothesis - which is that of equal variances. 
 
+> What does homogeneity of variance mean ?
+    When we conduct a levene's test and fail to reject the Null, we are saying that, there is not a significant difference in the variances across the groups. This means that it is valid to pool all error variances from the groups to get one estimate of error. By performing a leveneTest(), you can check whether or not the homogeneity of variance assumption holds for a given dataset. The assumption must hold for the results of an ANOVA analysis to be valid.
+
+
 ## Post Hoc tests
 The F-test showed a significant effect somewhere among the groups. However, it did not tell you which pairwise comparisons are significant. This is where post-hoc tests come into play. They help you to find out which groups differ significantly from one other and which do not. More formally, post-hoc tests allow for multiple pairwise comparisons without inflating the type I error.
 
