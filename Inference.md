@@ -10,6 +10,7 @@ Shravan Kuchkula
 -   [Data set description](#data-set-description)
 -   [Understanding the NULL DISTRIBUTION](#understanding-the-null-distribution)
     -   [Randomization density](#randomization-density)
+-   [Example 2: Gender discrimination](#example-2-gender-discrimination)
 
 Foundations of inference
 ------------------------
@@ -56,77 +57,6 @@ libs <- c("readr", "dplyr", "tidyr", "ggplot2",
 
 installRequiredPackages(libs)
 ```
-
-    ## Loading required package: readr
-
-    ## Loading required package: dplyr
-
-    ## 
-    ## Attaching package: 'dplyr'
-
-    ## The following objects are masked from 'package:stats':
-    ## 
-    ##     filter, lag
-
-    ## The following objects are masked from 'package:base':
-    ## 
-    ##     intersect, setdiff, setequal, union
-
-    ## Loading required package: tidyr
-
-    ## Loading required package: ggplot2
-
-    ## Loading required package: magrittr
-
-    ## 
-    ## Attaching package: 'magrittr'
-
-    ## The following object is masked from 'package:tidyr':
-    ## 
-    ##     extract
-
-    ## Loading required package: markdown
-
-    ## Loading required package: knitr
-
-    ## Loading required package: yaml
-
-    ## Loading required package: corrplot
-
-    ## Loading required package: GGally
-
-    ## 
-    ## Attaching package: 'GGally'
-
-    ## The following object is masked from 'package:dplyr':
-    ## 
-    ##     nasa
-
-    ## Loading required package: broom
-
-    ## Loading required package: psych
-
-    ## 
-    ## Attaching package: 'psych'
-
-    ## The following objects are masked from 'package:ggplot2':
-    ## 
-    ##     %+%, alpha
-
-    ## Loading required package: car
-
-    ## 
-    ## Attaching package: 'car'
-
-    ## The following object is masked from 'package:psych':
-    ## 
-    ##     logit
-
-    ## The following object is masked from 'package:dplyr':
-    ## 
-    ##     recode
-
-    ## Loading required package: NHANES
 
     ##    readr    dplyr    tidyr  ggplot2 magrittr markdown    knitr     yaml 
     ##     TRUE     TRUE     TRUE     TRUE     TRUE     TRUE     TRUE     TRUE 
@@ -220,15 +150,15 @@ homes %>%
     ## # A tibble: 10 × 3
     ##    Gender HomeOwn HomeOwn_perm
     ##    <fctr>  <fctr>       <fctr>
-    ## 1    male     Own         Rent
+    ## 1    male     Own          Own
     ## 2    male     Own          Own
     ## 3    male     Own          Own
-    ## 4    male     Own         Rent
+    ## 4    male     Own          Own
     ## 5  female    Rent         Rent
-    ## 6    male    Rent         Rent
+    ## 6    male    Rent          Own
     ## 7    male     Own          Own
-    ## 8  female     Own         Rent
-    ## 9  female     Own         Rent
+    ## 8  female     Own          Own
+    ## 9  female     Own          Own
     ## 10 female     Own          Own
 
 Next, let's group them by `Gender`.
@@ -262,8 +192,8 @@ homes %>%
     ## # A tibble: 2 × 3
     ##   Gender prop_own_perm  prop_own
     ##   <fctr>         <dbl>     <dbl>
-    ## 1 female     0.6607362 0.6654397
-    ## 2   male     0.6623808 0.6576109
+    ## 1 female     0.6635992 0.6654397
+    ## 2   male     0.6594774 0.6576109
 
 Now the question was: "Perform a single permutation to evaluate whether home ownership status (i.e. HomeOwn) differs between the "female" and "male" groups"
 
@@ -282,9 +212,9 @@ homes %>%
 ```
 
     ## # A tibble: 1 × 2
-    ##     diff_perm    diff_orig
-    ##         <dbl>        <dbl>
-    ## 1 0.009470313 -0.007828723
+    ##    diff_perm    diff_orig
+    ##        <dbl>        <dbl>
+    ## 1 0.01358913 -0.007828723
 
 > Keep in mind, this is just a single random permutation. Next, you'll look at several permuted differences to see how they compare with the observed difference.
 
@@ -327,21 +257,21 @@ homes %>%
     ## 
     ##    replicate Gender HomeOwn
     ##        <int> <fctr>  <fctr>
-    ## 1          1   male     Own
+    ## 1          1 female    Rent
     ## 2          1   male     Own
-    ## 3          1 female    Rent
-    ## 4          1 female     Own
+    ## 3          1   male     Own
+    ## 4          1   male     Own
     ## 5          1   male     Own
-    ## 6          2   male     Own
-    ## 7          2   male     Own
+    ## 6          2 female    Rent
+    ## 7          2   male    Rent
     ## 8          2   male     Own
-    ## 9          2   male     Own
-    ## 10         2   male    Rent
-    ## 11         3 female     Own
-    ## 12         3   male     Own
+    ## 9          2 female     Own
+    ## 10         2 female    Rent
+    ## 11         3 female    Rent
+    ## 12         3   male    Rent
     ## 13         3 female     Own
-    ## 14         3   male     Own
-    ## 15         3   male    Rent
+    ## 14         3 female    Rent
+    ## 15         3 female    Rent
 
 will return three samples of 5 observations from the homes dataset you created in the last exercise. The first 5 rows will have a value of 1 in the replicate column, the next 5 rows will have a value of 2, and so on. Note that the default value for the replace argument is FALSE.
 
@@ -368,18 +298,18 @@ print(homeown_perm)
 ```
 
     ## # A tibble: 10 × 3
-    ##    replicate    diff_perm    diff_orig
-    ##        <int>        <dbl>        <dbl>
-    ## 1          1 -0.028834695 -0.007828723
-    ## 2          2 -0.001650496 -0.007828723
-    ## 3          3  0.021826767 -0.007828723
-    ## 4          4  0.012353486 -0.007828723
-    ## 5          5 -0.006181196 -0.007828723
-    ## 6          6 -0.004121787 -0.007828723
-    ## 7          7 -0.016890123 -0.007828723
-    ## 8          8  0.002468322 -0.007828723
-    ## 9          9 -0.014418832 -0.007828723
-    ## 10        10 -0.002474260 -0.007828723
+    ##    replicate   diff_perm    diff_orig
+    ##        <int>       <dbl>        <dbl>
+    ## 1          1 0.007822786 -0.007828723
+    ## 2          2 0.018531713 -0.007828723
+    ## 3          3 0.012353486 -0.007828723
+    ## 4          4 0.005763377 -0.007828723
+    ## 5          5 0.006175258 -0.007828723
+    ## 6          6 0.002880204 -0.007828723
+    ## 7          7 0.003703968 -0.007828723
+    ## 8          8 0.009470313 -0.007828723
+    ## 9          9 0.003703968 -0.007828723
+    ## 10        10 0.019767358 -0.007828723
 
 Using geom\_dotplot(), plot the differences in proportions obtained by shuffling the HomeOwn variable. Adjust the size of the dots by including binwidth = .001 in your call to geom\_dotplot()
 
@@ -436,3 +366,71 @@ ggplot(homeown_perm, aes(x = diff_perm)) +
 ```
 
 ![](Inference_files/figure-markdown_github/unnamed-chunk-14-1.png)
+
+Recall, that the logic of statistical inference is to compare the observed statistic to the distribution of statistics that come from a Null Distribution. You have now seen how to create the distribution with your own R code. The next question to ask is, how do we use the information in the Null Distribution. Remember that each dot is from a different permutation of the data. The goal is to show that our observed data are not consistent with the differences generated. We want our observed data to be different from the null, so we can claim the alternative research hypothesis is true.
+
+> IS DATA CONSISTENT WITH NULL ? HOW EXTREME ARE THE OBSERVED DATA ?
+
+38% of the data are more extreme than the observed data. This suggests that the data are consistent with the permutated distribution. Thus we say that we have no evidence that rates of cola differ by coast.
+
+Do the data come from the population ?
+
+Recall that the observed difference (i.e. the difference in proportions in the homes dataset, shown as the red vertical line) was around -0.0078, which seems to fall below the bulk of the density of shuffled differences. It is important to know, however, whether any of the randomly permuted differences were as extreme as the observed difference.
+
+In this exercise, you'll re-create this dotplot as a density plot and count the number of permuted differences that were to the left of the observed difference.
+
+Using geom\_density(), plot the permuted differences. Add a vertical red line with geom\_vline() where the observed statistic falls.
+
+``` r
+# Plot permuted differences
+ggplot(homeown_perm, aes(x = diff_perm)) + 
+  geom_density(adjust=2) +
+  geom_vline(aes(xintercept = diff_orig),
+          col = "red")
+```
+
+![](Inference_files/figure-markdown_github/unnamed-chunk-15-1.png)
+
+Count the number of permuted differences that were less than or equal to the observed difference.
+
+``` r
+# Compare permuted differences to observed difference
+homeown_perm %>%
+  summarize(sum(diff_orig >= diff_perm))
+```
+
+    ## # A tibble: 1 × 1
+    ##   `sum(diff_orig >= diff_perm)`
+    ##                           <int>
+    ## 1                           220
+
+220 permuted differences are more extreme than the observed difference. This only represents 22.0% of the null statistics, so you can conclude that the observed difference is consistent with the permuted distribution.
+
+We have learned that our data is consistent with the hypothesis of no difference in home ownership across gender.
+
+In this case, we say that the observed statistic was consistent with the null statistics. That is, 220 of the 1000 permutations were smaller than the original value. There is no evidence that the data are inconsistent with the null hypothesis
+
+Example 2: Gender discrimination
+--------------------------------
+
+As the first step of any analysis, you should look at and summarize the data. Categorical variables are often summarized using proportions, and it is always important to understand the denominator of the proportion.
+
+Do you want the proportion of women who were promoted or the proportion of promoted individuals who were women? Here, you want the first of these, so in your R code it's necessary to group\_by() the sex variable.
+
+``` r
+# Read in the dataset
+disc <- readRDS("/Users/Shravan/Downloads/disc_new.rds")
+```
+
+Using `table()` function, summarize the data as a contingency table.
+
+``` r
+table(disc)
+```
+
+    ##               sex
+    ## promote        female male
+    ##   not_promoted      7    6
+    ##   promoted         17   18
+
+Summarize the data by using group\_by() on the sex variable and finding the proportion who were promoted. Call this variable promoted\_prop. Note that with binary variables, the proportion of either value can be found using the mean() function (e.g. mean(variable == "value") )

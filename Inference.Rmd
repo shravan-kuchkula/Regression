@@ -38,7 +38,7 @@ Thoughout this chapter, you will use the `NHANES` dataset from the `NHANES` R pa
 
 Before moving on to investigate particular variables, you'll have an opportunity to briefly explore the data in this exercise.
 
-```{r}
+```{r message = FALSE, warning= FALSE}
 # Load all the libraries
 installRequiredPackages <- function(pkg){
   new.pkg <- pkg[!(pkg %in% installed.packages()[,"Package"])]
