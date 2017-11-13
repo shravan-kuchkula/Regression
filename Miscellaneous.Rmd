@@ -32,4 +32,5 @@ To find the variables in a particular dataset, use `names`
 names(mtcars)
 ```
 
+### colMeans
 

@@ -298,6 +298,133 @@ table(disc)
 
 Summarize the data by using group_by() on the sex variable and finding the proportion who were promoted. Call this variable promoted_prop. Note that with binary variables, the proportion of either value can be found using the mean() function (e.g. mean(variable == "value") )
 
+```{r}
+# Find proportion of each sex who were promoted
+disc %>%
+  group_by(sex) %>%
+  summarise(promoted_prop = mean(promote == "promoted"))
+```
+
+Okay, so the difference in proportions promoted is almost 0.3.
+
+To help you understand the code used to create the randomization distribution, this exercise will walk you through each step, one at a time.
+
+Remember that when using the pipe notation (%>%) with so-called tidy functions like mutate() and summarize() from the dplyr package, each input is a data frame and each output is also a data frame. To keep the output manageable, we will use only 5 replicates here.
+
+```{r}
+# Sample the entire data frame 5 times
+disc %>%
+  rep_sample_n(size = nrow(disc), reps = 5)
+```
+
+Within each of the 5 replicates of the original data, shuffle the promote variable to break any relationship between promotion and gender.
+
+```{r}
+# Shuffle the promote variable within replicate
+disc %>%
+  rep_sample_n(size = nrow(disc), reps = 5) %>%
+  mutate(prom_perm = sample(promote)) 
+```
+
+Building on the previous data frame, group by replicate and sex then find the proportion of individuals promoted in each grouped category.
+
+```{r}
+# Find the proportion of promoted in each replicate and sex
+disc %>%
+  rep_sample_n(size = nrow(disc), reps = 5) %>%
+  mutate(prom_perm = sample(promote)) %>%
+  group_by(replicate, sex) %>%
+  summarize(prop_prom_perm = mean(prom_perm == "promoted"),
+            prop_prom = mean(promote == "promoted")) 
+```
+
+
+Continuing, find the difference in proportion of "promoted" across sex grouped by replicate.
+
+```{r}
+# Difference in proportion of promoted across sex grouped by gender
+disc %>%
+  rep_sample_n(size = nrow(disc), reps = 5) %>%
+  mutate(prom_perm = sample(promote)) %>%
+  group_by(replicate, sex) %>%
+  summarize(prop_prom_perm = mean(prom_perm == "promoted"),
+            prop_prom = mean(promote == "promoted"))  %>%
+  summarize(diff_perm = diff(prop_prom_perm),
+            diff_orig = diff(prop_prom))  # male - female
+```
+
+Let's quickly recap what you just did. Using rep_sample_n(), you took 5 repeated samples (i.e. Replications) of the disc data, then shuffled these using sample() to break any links between gender and getting promoted. Then for each replication, you calculated the proportions of promoted males and females in the dataset along with the difference in proportions. 
+
+### Randomizing gender discrimination
+
+In this exercise, you'll create a randomization distribution of the null statistic with 1000 replicates as opposed to just 5 in the previous exercise. As a reminder, the statistic of interest is the difference in proportions promoted between genders (i.e. proportion for males minus proportion for females).
+
+```{r}
+# Create a data frame of differences in promotion rates
+disc_perm <- disc %>%
+  rep_sample_n(size = nrow(disc), reps = 1000) %>%
+  mutate(prom_perm = sample(promote)) %>%
+  group_by(replicate, sex) %>%
+  summarize(prop_prom_perm = mean(prom_perm == "promoted"),
+            prop_prom = mean(promote == "promoted")) %>%
+  summarize(diff_perm = diff(prop_prom_perm),
+            diff_orig = diff(prop_prom))  # male - female
+
+
+# Histogram of permuted differences
+ggplot(disc_perm, aes(x = diff_perm)) + 
+  geom_histogram(binwidth = 0.01) +
+  geom_vline(aes(xintercept = diff_orig), col = "red")
+```
+
+> Remember the main point: We are interested in whether observed statistic is different from values obtained by shuffling.
+
+One way to measure how far the observed statistic is from the null values is to calculate the `quantiles` of the null statistics. After we have generated a 100 different shuffles of the original data, we can see that the 5% quantile is -0.292, that is, 5% of the observations are at -0.292 or below. 
+
+> quantile : The generic function quantile produces sample quantiles corresponding to the given probabilities. The smallest observation corresponds to a probability of 0 and the largest to a probability of 1. 
+Syntax : quantile(x, probs)
+x : numeric vector whose sample quantiles are wanted
+probs : numeric vector of probabilities with values in [0,1]
+
+Similarly, the 95% quantile is 0.208, that is, 95% of the NULL observations are at 0.208 or below. Meaning that our observed statistic of 0.29 is larger than 95% of the NULL statistics (or observations). Using R, we can get the same quantile measurement that allow the comparison of the NULL statistics with the observed statistic. Given the earlier simulations, we can see that 95% of the observations are 0.208 or lower. 
+
+```{r}
+disc_perm %>%
+  summarize(q.05 = quantile(diff_perm, p = 0.05),
+            q.95 = quantile(diff_perm, p = 0.95))
+```
+
+These simulations give further evidence that the observed statistic is consistent with the bulk of the null statistics. 
+
+Often the quantiles describing the tails of the NULL distribution determine what is called the `critical region`. The critical region determines which observed statistics are consistent with the NULL distribution.
+
+## Why 0.05 ?
+
+In the previous exercises you determined the quantiles of the Null distribution. The cut-off values allow you to know how big or how small the observed statistic should be, in order to reject the null hypothesis. The choice of 0.05 for the quantile cut-off is somewhat arbitrary. However, the reasons to use it are historical.
+
+## Effect of sample size
+
+Notice that the observed difference of 0.2917 is in the extreme right tail of the permuted differences. If the sample was ten times larger but the sample statistic was exactly the same (i.e. 0.2917), how would the distribution of permuted differences change ?
+
+Answer: The statistic of 0.2917 would be much farther to the right of the permuted differences (completely off of the distribution)
+
+The observed difference is consistent with differences you would see by chance if the sample size was small. The observed difference would virtually never be observed by chance if the sample size was big.
+
+
+## p-value
+Remember, our interest is how consistent the observed data are with the data taken from a population where gender and promotion are de-linked. By permuting the data repeatedly we can quantify how likely the observed data are in a situation where the null hypothesis is true. The null hypothesis is that promotion rates in the population do not differ for men and women.
+
+> p-value is the probability of observing data as or more extreme than what we actually got given the null hypothesis is true.
+
+In this instance, the p-value is the probability of observing a difference of 0.2917 or greater when promotion rates do not vary across gender. The p-value is 0.504
+
+
+```{r}
+# Calculate the p-value for the original dataset
+disc_perm %>%
+  summarize(mean(diff_orig <= diff_perm))
+```
+
 
 
 

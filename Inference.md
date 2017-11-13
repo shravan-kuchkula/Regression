@@ -11,6 +11,7 @@ Shravan Kuchkula
 -   [Understanding the NULL DISTRIBUTION](#understanding-the-null-distribution)
     -   [Randomization density](#randomization-density)
 -   [Example 2: Gender discrimination](#example-2-gender-discrimination)
+    -   [Randomizing gender discrimination](#randomizing-gender-discrimination)
 
 Foundations of inference
 ------------------------
@@ -150,15 +151,15 @@ homes %>%
     ## # A tibble: 10 × 3
     ##    Gender HomeOwn HomeOwn_perm
     ##    <fctr>  <fctr>       <fctr>
-    ## 1    male     Own          Own
+    ## 1    male     Own         Rent
     ## 2    male     Own          Own
-    ## 3    male     Own          Own
+    ## 3    male     Own         Rent
     ## 4    male     Own          Own
-    ## 5  female    Rent         Rent
+    ## 5  female    Rent          Own
     ## 6    male    Rent          Own
-    ## 7    male     Own          Own
+    ## 7    male     Own         Rent
     ## 8  female     Own          Own
-    ## 9  female     Own          Own
+    ## 9  female     Own         Rent
     ## 10 female     Own          Own
 
 Next, let's group them by `Gender`.
@@ -192,8 +193,8 @@ homes %>%
     ## # A tibble: 2 × 3
     ##   Gender prop_own_perm  prop_own
     ##   <fctr>         <dbl>     <dbl>
-    ## 1 female     0.6635992 0.6654397
-    ## 2   male     0.6594774 0.6576109
+    ## 1 female     0.6609407 0.6654397
+    ## 2   male     0.6621734 0.6576109
 
 Now the question was: "Perform a single permutation to evaluate whether home ownership status (i.e. HomeOwn) differs between the "female" and "male" groups"
 
@@ -212,9 +213,9 @@ homes %>%
 ```
 
     ## # A tibble: 1 × 2
-    ##    diff_perm    diff_orig
-    ##        <dbl>        <dbl>
-    ## 1 0.01358913 -0.007828723
+    ##     diff_perm    diff_orig
+    ##         <dbl>        <dbl>
+    ## 1 0.006175258 -0.007828723
 
 > Keep in mind, this is just a single random permutation. Next, you'll look at several permuted differences to see how they compare with the observed difference.
 
@@ -257,21 +258,21 @@ homes %>%
     ## 
     ##    replicate Gender HomeOwn
     ##        <int> <fctr>  <fctr>
-    ## 1          1 female    Rent
-    ## 2          1   male     Own
-    ## 3          1   male     Own
+    ## 1          1   male     Own
+    ## 2          1 female     Own
+    ## 3          1   male    Rent
     ## 4          1   male     Own
-    ## 5          1   male     Own
-    ## 6          2 female    Rent
+    ## 5          1   male    Rent
+    ## 6          2   male    Rent
     ## 7          2   male    Rent
-    ## 8          2   male     Own
-    ## 9          2 female     Own
-    ## 10         2 female    Rent
-    ## 11         3 female    Rent
-    ## 12         3   male    Rent
-    ## 13         3 female     Own
-    ## 14         3 female    Rent
-    ## 15         3 female    Rent
+    ## 8          2 female     Own
+    ## 9          2   male     Own
+    ## 10         2 female     Own
+    ## 11         3   male     Own
+    ## 12         3   male     Own
+    ## 13         3   male     Own
+    ## 14         3   male     Own
+    ## 15         3 female     Own
 
 will return three samples of 5 observations from the homes dataset you created in the last exercise. The first 5 rows will have a value of 1 in the replicate column, the next 5 rows will have a value of 2, and so on. Note that the default value for the replace argument is FALSE.
 
@@ -298,18 +299,18 @@ print(homeown_perm)
 ```
 
     ## # A tibble: 10 × 3
-    ##    replicate   diff_perm    diff_orig
-    ##        <int>       <dbl>        <dbl>
-    ## 1          1 0.007822786 -0.007828723
-    ## 2          2 0.018531713 -0.007828723
-    ## 3          3 0.012353486 -0.007828723
-    ## 4          4 0.005763377 -0.007828723
-    ## 5          5 0.006175258 -0.007828723
-    ## 6          6 0.002880204 -0.007828723
-    ## 7          7 0.003703968 -0.007828723
-    ## 8          8 0.009470313 -0.007828723
-    ## 9          9 0.003703968 -0.007828723
-    ## 10        10 0.019767358 -0.007828723
+    ##    replicate     diff_perm    diff_orig
+    ##        <int>         <dbl>        <dbl>
+    ## 1          1 -1.441883e-02 -0.007828723
+    ## 2          2  9.058431e-03 -0.007828723
+    ## 3          3 -2.968670e-06 -0.007828723
+    ## 4          4  1.152972e-02 -0.007828723
+    ## 5          5 -4.945550e-03 -0.007828723
+    ## 6          6  6.587140e-03 -0.007828723
+    ## 7          7 -1.441883e-02 -0.007828723
+    ## 8          8 -1.650496e-03 -0.007828723
+    ## 9          9 -8.652487e-03 -0.007828723
+    ## 10        10 -4.121787e-03 -0.007828723
 
 Using geom\_dotplot(), plot the differences in proportions obtained by shuffling the HomeOwn variable. Adjust the size of the dots by including binwidth = .001 in your call to geom\_dotplot()
 
@@ -402,7 +403,7 @@ homeown_perm %>%
     ## # A tibble: 1 × 1
     ##   `sum(diff_orig >= diff_perm)`
     ##                           <int>
-    ## 1                           220
+    ## 1                           211
 
 220 permuted differences are more extreme than the observed difference. This only represents 22.0% of the null statistics, so you can conclude that the observed difference is consistent with the permuted distribution.
 
@@ -434,3 +435,167 @@ table(disc)
     ##   promoted         17   18
 
 Summarize the data by using group\_by() on the sex variable and finding the proportion who were promoted. Call this variable promoted\_prop. Note that with binary variables, the proportion of either value can be found using the mean() function (e.g. mean(variable == "value") )
+
+``` r
+# Find proportion of each sex who were promoted
+disc %>%
+  group_by(sex) %>%
+  summarise(promoted_prop = mean(promote == "promoted"))
+```
+
+    ## # A tibble: 2 × 2
+    ##      sex promoted_prop
+    ##   <fctr>         <dbl>
+    ## 1 female     0.7083333
+    ## 2   male     0.7500000
+
+Okay, so the difference in proportions promoted is almost 0.3.
+
+To help you understand the code used to create the randomization distribution, this exercise will walk you through each step, one at a time.
+
+Remember that when using the pipe notation (%&gt;%) with so-called tidy functions like mutate() and summarize() from the dplyr package, each input is a data frame and each output is also a data frame. To keep the output manageable, we will use only 5 replicates here.
+
+``` r
+# Sample the entire data frame 5 times
+disc %>%
+  rep_sample_n(size = nrow(disc), reps = 5)
+```
+
+    ## Source: local data frame [240 x 3]
+    ## Groups: replicate [5]
+    ## 
+    ##    replicate      promote    sex
+    ## *      <int>       <fctr> <fctr>
+    ## 1          1     promoted   male
+    ## 2          1 not_promoted female
+    ## 3          1     promoted female
+    ## 4          1     promoted   male
+    ## 5          1 not_promoted female
+    ## 6          1     promoted female
+    ## 7          1     promoted   male
+    ## 8          1 not_promoted female
+    ## 9          1     promoted female
+    ## 10         1     promoted female
+    ## # ... with 230 more rows
+
+Within each of the 5 replicates of the original data, shuffle the promote variable to break any relationship between promotion and gender.
+
+``` r
+# Shuffle the promote variable within replicate
+disc %>%
+  rep_sample_n(size = nrow(disc), reps = 5) %>%
+  mutate(prom_perm = sample(promote)) 
+```
+
+    ## Source: local data frame [240 x 4]
+    ## Groups: replicate [5]
+    ## 
+    ##    replicate      promote    sex    prom_perm
+    ##        <int>       <fctr> <fctr>       <fctr>
+    ## 1          1     promoted female not_promoted
+    ## 2          1 not_promoted   male     promoted
+    ## 3          1     promoted   male     promoted
+    ## 4          1     promoted female     promoted
+    ## 5          1     promoted   male     promoted
+    ## 6          1     promoted female     promoted
+    ## 7          1     promoted   male not_promoted
+    ## 8          1     promoted   male     promoted
+    ## 9          1     promoted   male     promoted
+    ## 10         1 not_promoted female     promoted
+    ## # ... with 230 more rows
+
+Building on the previous data frame, group by replicate and sex then find the proportion of individuals promoted in each grouped category.
+
+``` r
+# Find the proportion of promoted in each replicate and sex
+disc %>%
+  rep_sample_n(size = nrow(disc), reps = 5) %>%
+  mutate(prom_perm = sample(promote)) %>%
+  group_by(replicate, sex) %>%
+  summarize(prop_prom_perm = mean(prom_perm == "promoted"),
+            prop_prom = mean(promote == "promoted")) 
+```
+
+    ## Source: local data frame [10 x 4]
+    ## Groups: replicate [?]
+    ## 
+    ##    replicate    sex prop_prom_perm prop_prom
+    ##        <int> <fctr>          <dbl>     <dbl>
+    ## 1          1 female      0.7916667 0.7083333
+    ## 2          1   male      0.6666667 0.7500000
+    ## 3          2 female      0.7083333 0.7083333
+    ## 4          2   male      0.7500000 0.7500000
+    ## 5          3 female      0.7500000 0.7083333
+    ## 6          3   male      0.7083333 0.7500000
+    ## 7          4 female      0.6666667 0.7083333
+    ## 8          4   male      0.7916667 0.7500000
+    ## 9          5 female      0.5833333 0.7083333
+    ## 10         5   male      0.8750000 0.7500000
+
+Continuing, find the difference in proportion of "promoted" across sex grouped by replicate.
+
+``` r
+# Difference in proportion of promoted across sex grouped by gender
+disc %>%
+  rep_sample_n(size = nrow(disc), reps = 5) %>%
+  mutate(prom_perm = sample(promote)) %>%
+  group_by(replicate, sex) %>%
+  summarize(prop_prom_perm = mean(prom_perm == "promoted"),
+            prop_prom = mean(promote == "promoted"))  %>%
+  summarize(diff_perm = diff(prop_prom_perm),
+            diff_orig = diff(prop_prom))  # male - female
+```
+
+    ## # A tibble: 5 × 3
+    ##   replicate   diff_perm  diff_orig
+    ##       <int>       <dbl>      <dbl>
+    ## 1         1 -0.04166667 0.04166667
+    ## 2         2  0.04166667 0.04166667
+    ## 3         3  0.04166667 0.04166667
+    ## 4         4 -0.04166667 0.04166667
+    ## 5         5  0.04166667 0.04166667
+
+Let's quickly recap what you just did. Using rep\_sample\_n(), you took 5 repeated samples (i.e. Replications) of the disc data, then shuffled these using sample() to break any links between gender and getting promoted. Then for each replication, you calculated the proportions of promoted males and females in the dataset along with the difference in proportions.
+
+### Randomizing gender discrimination
+
+In this exercise, you'll create a randomization distribution of the null statistic with 1000 replicates as opposed to just 5 in the previous exercise. As a reminder, the statistic of interest is the difference in proportions promoted between genders (i.e. proportion for males minus proportion for females).
+
+``` r
+# Create a data frame of differences in promotion rates
+disc_perm <- disc %>%
+  rep_sample_n(size = nrow(disc), reps = 1000) %>%
+  mutate(prom_perm = sample(promote)) %>%
+  group_by(replicate, sex) %>%
+  summarize(prop_prom_perm = mean(prom_perm == "promoted"),
+            prop_prom = mean(promote == "promoted")) %>%
+  summarize(diff_perm = diff(prop_prom_perm),
+            diff_orig = diff(prop_prom))  # male - female
+
+
+# Histogram of permuted differences
+ggplot(disc_perm, aes(x = diff_perm)) + 
+  geom_histogram(binwidth = 0.01) +
+  geom_vline(aes(xintercept = diff_orig), col = "red")
+```
+
+![](Inference_files/figure-markdown_github/unnamed-chunk-24-1.png)
+
+> Remember the main point: We are interested in whether observed statistic is different from values obtained by shuffling.
+
+One way to measure how far the observed statistic is from the null values is to calculate the `quantiles` of the null statistics. After we have generated a 100 different shuffles of the original data, we can see that the 5% quantile is -0.292, that is, 5% of the observations are at -0.292 or below.
+
+> quantile : The generic function quantile produces sample quantiles corresponding to the given probabilities. The smallest observation corresponds to a probability of 0 and the largest to a probability of 1. Syntax : quantile(x, probs) x : numeric vector whose sample quantiles are wanted probs : numeric vector of probabilities with values in \[0,1\]
+
+Similarly, the 95% quantile is 0.208, that is, 95% of the NULL observations are at 0.208 or below. Meaning that our observed statistic of 0.29 is larger than 95% of the NULL statistics (or observations). Using R, we can get the same quantile measurement that allow the comparison of the NULL statistics with the observed statistic. Given the earlier simulations, we can see that 95% of the observations are xxx or lower.
+
+``` r
+disc_perm %>%
+  summarize(q.05 = quantile(diff_perm, p = 0.05),
+            q.95 = quantile(diff_perm, p = 0.95))
+```
+
+    ## # A tibble: 1 × 2
+    ##         q.05      q.95
+    ##        <dbl>     <dbl>
+    ## 1 -0.2083333 0.2083333
