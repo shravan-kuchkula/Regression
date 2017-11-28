@@ -30,6 +30,9 @@ output:
 * **`What is Chi-Square distribution ?`**
 * **`How to calculate Chi-Square statistic of a contingency table ?`**
 * **`What is one-way frequecy table ?`**
+* **`Goodness-of-fit test`**
+* **`Two-way Tables: Concept of Independence and Association`**
+  
 
 ## Introduction
 The focus of this page is multivariate analysis of discrete data. The modern statistical inference has many approaches/models for discrete data. When talking about discrete data, it helps to review what are the types of discrete data.
@@ -215,12 +218,62 @@ The variance of the Binomial distribution follows a particular rule. Which is th
 ## One-way frequency table
 A frequency table arises when sample units are classified into mutually exclusive categories; the number of units falling into each category is recorded. "One way" means that units are classified according to a single categorical variable. 
 
-![My Figure](AnalysisOfDiscreteVariables_files/one-way-table.png)
+![Example 1](AnalysisOfDiscreteVariables_files/one-way-table.png)
 
+Example 2: NOTE the use of poisson distribution here:
 
+![Example 2](AnalysisOfDiscreteVariables_files/one-way-table2.png)
 
+> Relate them to Prospective or Retrospective study that prof was talking about.
 
+![Example 3](AnalysisOfDiscreteVariables_files/one-way-table3.png)
 
+Why is it important to know the random mechanism that generated the data ?
+(or)
+What are some ways of generating these one-way tables of counts?
+
+Any data analysis requires some assumptions about the data generation process. For continuous data and linear regression, for example, we assume that the response variable have been randomly generated from a `normal distribution`. For categorical data we will often assume that data have been generated from a `Poisson, binomial or multinomial distribution`. *Statistical analysis depends on the data generation mechanism*.
+
+The following sampling methods correspond to the distributions considered:
+
+* **Unrestricted sampling** - corresponds to Poisson Distribution.
+* **Sampling with fixed total sample size** - corresponds to Binomial or Multinomial distributions.
+
+Poisson Sampling:
+Poisson sampling assumes that the random mechanism to generate the data can be described by a Poisson distribution. It is useful for modeling counts or events that occur randomly over a fixed period of time or in a fixed space. Often it is useful when the probability of any particular incidence happening is very small while the number of incidences is very large.
+
+Binomial Sampling:
+
+Multinomial Sampling:
+
+## Goodness of fit test
+A goodness-of-fit test, in general, refers to measuring how well do the observed data correspond to the fitted (assumed) model. We will use this concept throughout the course as a way of checking the model fit. Like in a linear regression, in essence, the goodness-of-fit test compares the observed values to the expected (fitted or predicted) values.
+
+A goodness-of-fit statistic tests the following hypothesis:
+
+> H0: the model M0 fits
+            vs
+  HA: the model M0 does not fit (or, some other model MA fits)
+  
+## Two-way Tables: Concept of Independence and Association
+
+![TwoWayTables](AnalysisOfDiscreteVariables_files/two-way-table.png)
+
+Understanding Two-way contingency table with Vitamin C example:
+This is a classic example for understanding how to represent a 2x2 table in terms of `counts` and `proportions` and understanding measures of association between the two variables. Look at the questions.
+
+![VitaminC](AnalysisOfDiscreteVariables_files/vitaminC.png)
+
+How to measure Independence ? Use a goodness-of-fit test. 
+
+Measures of Association:
+When the null hypothesis of independence is rejected, the nature of dependence - its direction and magnitude - needs to be measured. A statistic that measures the direction and magnitude of the relationship between two variables is called an effect size or a measure of association. 
+
+We will discuss several effect sizes that describe the association between two categorical variables, Y and Z:
+
+* **difference in proportions**
+* **relative risk**
+* **odds ratio**
 
 
 

@@ -101,3 +101,49 @@ run;
 *model logArea =  FFMC DMC DC ISI temp RH wind rain RH2 wind2 FFMC_DMC FFMC_DC FFMC_ISI DMC_DC DMC_ISI DC_ISI;
 *class season day;
 *run;
+
+
+ods graphics on;
+proc glmselect data=ff4 plots(stepAxis=number)=(criterionPanel ASEPlot CRITERIONPANEL);
+class season;
+model logArea = FFMC DMC DC ISI temp rain wind RH RH2 wind2 FFMC_DMC FFMC_DC FFMC_ISI DMC_DC DMC_ISI DC_ISI / selection=LASSO(choose=CV stop=AIC) CVdetails  ;
+run;
+quit;
+ods graphics off;
+
+proc print data=ff2; run;
+
+ods graphics on;
+proc glmselect data=ff2 plots=none;
+	class season;
+	model logArea = FFMC DMC DC ISI temp RH wind rain RH2 wind2 season 
+					FFMC_DMC FFMC_DC FFMC_ISI DMC_DC DMC_ISI DC_ISI / details=all stats=all;
+run;
+ods graphics off;
+
+proc glmselect data=ff2 plots=none;
+	class season;
+	model logArea = FFMC_DMC FFMC DMC /details=all stats=all;
+run;
+
+
+ods graphics on;
+proc glmselect data=ff2
+               seed=1 plots(stepAxis=number)=(criterionPanel ASEPlot CRITERIONPANEL);
+class season;
+model logArea = season FFMC DMC DC ISI temp RH wind rain RH2 wind2
+					FFMC_DMC FFMC_DC FFMC_ISI DMC_DC DMC_ISI DC_ISI / selection=LASSO(choose=CV stop=AIC) CVdetails  ;
+run;
+quit;
+ods graphics off;
+
+
+ods graphics on;
+proc glmselect data=ff2
+               seed=1 plots(stepAxis=number)=(criterionPanel ASEPlot CRITERIONPANEL);
+class season day;
+model logArea = season day FFMC DMC DC ISI temp RH wind rain RH2 wind2
+					FFMC_DMC FFMC_DC FFMC_ISI DMC_DC DMC_ISI DC_ISI / selection=LASSO(choose=AIC stop=CV) CVdetails  ;
+run;
+quit;
+ods graphics off;

@@ -9,6 +9,8 @@ Shravan Kuchkula
 -   [Binomial Distribution](#binomial-distribution)
 -   [Properties of a Binomial](#properties-of-a-binomial)
 -   [One-way frequency table](#one-way-frequency-table)
+-   [Goodness of fit test](#goodness-of-fit-test)
+-   [Two-way Tables: Concept of Independence and Association](#two-way-tables-concept-of-independence-and-association)
 
 What is covered in the page ?
 -----------------------------
@@ -27,6 +29,8 @@ What is covered in the page ?
 -   **`What is Chi-Square distribution ?`**
 -   **`How to calculate Chi-Square statistic of a contingency table ?`**
 -   **`What is one-way frequecy table ?`**
+-   **`Goodness-of-fit test`**
+-   **`Two-way Tables: Concept of Independence and Association`**
 
 Introduction
 ------------
@@ -74,7 +78,7 @@ You can flip multiple coins by changing the first argument. Here the result is 5
 rbinom(10, 1, .5)
 ```
 
-    ##  [1] 0 0 1 1 0 1 0 1 0 0
+    ##  [1] 1 0 0 1 0 0 0 1 0 1
 
 Let's run that again, this time we got 3 heads and 7 tails.
 
@@ -82,7 +86,7 @@ Let's run that again, this time we got 3 heads and 7 tails.
 rbinom(10, 1, .5)
 ```
 
-    ##  [1] 1 0 0 0 0 1 0 1 1 1
+    ##  [1] 0 0 1 0 1 0 1 1 1 0
 
 > Each time we do a set of flips we will see a different outcome. That is, it is random.
 
@@ -92,7 +96,7 @@ Right now each draw has only 1 coin flip, rather than counting heads this way, w
 rbinom(1, 10, .5)
 ```
 
-    ## [1] 8
+    ## [1] 1
 
 Here, we did 1 random draw and got a result shown above.
 
@@ -110,7 +114,7 @@ A thing to notice here is that the X value (remember X represents number of head
 rbinom(10, 10, .5)
 ```
 
-    ##  [1] 5 5 7 4 3 6 7 2 5 8
+    ##  [1] 7 7 3 5 6 6 5 4 5 6
 
 Let's digress one more time to understand what is meant by a binomial variable ?
 
@@ -139,7 +143,7 @@ Until now, we have been talking about there being a 50% chance of head and 50% c
 rbinom(10, 10, 0.8)
 ```
 
-    ##  [1]  8  6  9  6  7  8  8  9 10  9
+    ##  [1] 10  8  5  8  8  9  8  7  5  7
 
 Consider this process of flip a number of baised coin and counting the number of heads. Each outcome X is a random variable that follows a binomial distribution.
 
@@ -159,7 +163,7 @@ Out of these 100000 draws, about 25% are equal to 5. You can use a small trick i
 mean(flips == 5)
 ```
 
-    ## [1] 0.24389
+    ## [1] 0.24526
 
 This number gives the fraction of values equal to 5. Here, we used simulation to figure out the probability. You can get the same result, using the `dbinom` function. Pr(X == 5).
 
@@ -211,7 +215,7 @@ flips <- rbinom(100000, 10, 0.5)
 mean(flips)
 ```
 
-    ## [1] 4.99382
+    ## [1] 4.99899
 
 We see that the average is very close to 5. This is the center of the distribution. If we tried to sample from a binomial of size = 100 and p = 0.2 and calculate the expected value, we would get a value close to 20.
 
@@ -219,7 +223,7 @@ We see that the average is very close to 5. This is the center of the distributi
 mean(rbinom(100000, 100, 0.2))
 ```
 
-    ## [1] 19.99272
+    ## [1] 20.00103
 
 Notice the pattern !! There is a general rule. We can get the expected value of a binomial distribution by multiplying the size (or the number of flips) by the probability that each is heads. The expected value measures the center of the distribution.
 
@@ -231,7 +235,7 @@ We also want to measure how spread out the results are. R provides the `var()` f
 var(rbinom(100000, 10, .5))
 ```
 
-    ## [1] 2.50225
+    ## [1] 2.507394
 
 The variance of the Binomial distribution follows a particular rule. Which is that the variance is:
 
@@ -242,4 +246,41 @@ One-way frequency table
 
 A frequency table arises when sample units are classified into mutually exclusive categories; the number of units falling into each category is recorded. "One way" means that units are classified according to a single categorical variable.
 
-![My Figure](AnalysisOfDiscreteVariables_files/one-way-table.png)
+![Example 1](AnalysisOfDiscreteVariables_files/one-way-table.png)
+
+Example 2: NOTE the use of poisson distribution here:
+
+![Example 2](AnalysisOfDiscreteVariables_files/one-way-table2.png)
+
+> Relate them to Prospective or Retrospective study that prof was talking about.
+
+![Example 3](AnalysisOfDiscreteVariables_files/one-way-table3.png)
+
+Why is it important to know the random mechanism that generated the data ? (or) What are some ways of generating these one-way tables of counts?
+
+Any data analysis requires some assumptions about the data generation process. For continuous data and linear regression, for example, we assume that the response variable have been randomly generated from a `normal distribution`. For categorical data we will often assume that data have been generated from a `Poisson, binomial or multinomial distribution`. *Statistical analysis depends on the data generation mechanism*.
+
+The following sampling methods correspond to the distributions considered:
+
+-   **Unrestricted sampling** - corresponds to Poisson Distribution.
+-   **Sampling with fixed total sample size** - corresponds to Binomial or Multinomial distributions.
+
+Poisson Sampling: Poisson sampling assumes that the random mechanism to generate the data can be described by a Poisson distribution. It is useful for modeling counts or events that occur randomly over a fixed period of time or in a fixed space. Often it is useful when the probability of any particular incidence happening is very small while the number of incidences is very large.
+
+Binomial Sampling:
+
+Multinomial Sampling:
+
+Goodness of fit test
+--------------------
+
+A goodness-of-fit test, in general, refers to measuring how well do the observed data correspond to the fitted (assumed) model. We will use this concept throughout the course as a way of checking the model fit. Like in a linear regression, in essence, the goodness-of-fit test compares the observed values to the expected (fitted or predicted) values.
+
+A goodness-of-fit statistic tests the following hypothesis:
+
+> H0: the model M0 fits vs HA: the model M0 does not fit (or, some other model MA fits)
+
+Two-way Tables: Concept of Independence and Association
+-------------------------------------------------------
+
+![TwoWayTables](AnalysisOfDiscreteVariables_files/two-way-table.png)
